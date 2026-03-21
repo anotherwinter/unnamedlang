@@ -1,0 +1,94 @@
+
+X(PLUS, 1)
+X(MINUS)
+X(STAR)
+X(SLASH)
+X(MOD)
+
+X(BIT_SHIFTL)
+X(BIT_SHIFTR)
+X(BIT_AND)
+X(BIT_OR)
+X(BIT_XOR)
+X(COND_LT)
+X(COND_GT)
+X(COND_LEQ)
+X(COND_GEQ)
+X(COND_EQ)
+X(COND_NEQ)
+X(LOGIC_AND)
+X(LOGIC_OR)
+
+X(BANG)
+X(UNARY_INC)
+X(UNARY_DEC)
+
+X(EQUALS, 100)
+X(ASSIGN_ADD)
+X(ASSIGN_SUB)
+X(ASSIGN_MUL)
+X(ASSIGN_DIV)
+X(ASSIGN_MOD)
+X(ASSIGN_SHIFTL)
+X(ASSIGN_SHIFTR)
+X(ASSIGN_AND)
+X(ASSIGN_OR)
+X(ASSIGN_XOR)
+
+X(DOT)
+
+// non-operators
+X(LPAREN)
+X(RPAREN)
+X(LBRACE)
+X(RBRACE)
+
+// colon for semantic separation
+X(COLON)
+// comma for arguments/types separation
+X(COMMA)
+// TODO: add lambda to stage0
+// hash for lambda indication
+// HASH,
+
+// literals
+X(STRING)
+X(NUMBER)
+X(TRUE)
+X(FALSE)
+
+// custom names and other objects
+X(NAME)
+
+X(LSQUARE)
+X(RSQUARE)
+
+
+// keywords
+X(FN)
+X(RET)
+X(IF)
+X(ELSE)
+X(WHL)
+X(FOR)
+X(SWITCH)
+X(BRK)
+X(DEFAULT)
+X(CLASS)
+X(CONST)
+X(LOCAL)
+X(TOSS)
+X(VAR)
+X(DEL)
+X(STATIC)
+X(HIDDEN)
+X(ENUM)
+X(OP)
+
+// delimiter (newline)
+X(DELIMITER)
+
+// lexer error
+X(ERROR)
+
+X(ENDOFTOKENS)
