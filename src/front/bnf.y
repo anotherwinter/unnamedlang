@@ -1,14 +1,22 @@
 %require "3.2"
 %language "c++"
+%debug
 
 /* -------PROLOGUE------- */
 %parse-param { Lexer& lexer }
+%parse-param { ParserContext& ctx }
 %lex-param   { Lexer& lexer }
 
 %code requires {
-    #include "ast.h"
-    #include "lexer.h"
-    #include "shared.h"
+#include "ast.h"
+#include "lexer.h"
+#include "shared.h"
+#include <stack>
+
+struct ParserContext
+{
+    std::stack<ASTNode*> nodeLLStack;
+};
 }
 
 %{
@@ -133,7 +141,6 @@ ASTNode* astRoot = NULL;
 
 /* expression grammar */
 %type <node> expr
-%type <node> lvl_assign
 %type <node> lvl_logic
 %type <node> lvl_cond
 %type <node> lvl_bitwise_xor
@@ -243,7 +250,7 @@ ASTNode* astRoot = NULL;
     program_stmt_list
         : program_stmt_list delimiter_list program_stmt
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | program_stmt
@@ -319,9 +326,9 @@ ASTNode* astRoot = NULL;
 
 /* code block with braces */
     code_block
-        : opt_delimiter_list LBRACE opt_delimiter_list opt_stmt_list RBRACE
+        : opt_delimiter_list LBRACE opt_stmt_list RBRACE
             {
-                $$ = $4;
+                $$ = $3;
             }
     ;
 
@@ -337,15 +344,24 @@ ASTNode* astRoot = NULL;
     ;
 
     stmt_list
-        : stmt_list delimiter_list stmt_stmt
+        : opt_delimiter_list stmt_stmt
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
-                $$ = $1;
+                ctx.nodeLLStack.push(newNodeList($2));
             }
-        | stmt_stmt
+          stmt_list_tail
             {
-                $$ = newNodeList($1);
+              $$ = ctx.nodeLLStack.top();
+              ctx.nodeLLStack.pop();
             }
+    ;
+
+    stmt_list_tail
+        : delimiter_list stmt_stmt stmt_list_tail
+            {
+                astNodeLLAppend(ctx.nodeLLStack.top(), $2);
+            }
+        | delimiter_list
+        |
     ;
 
     code_block_or_stmt
@@ -423,7 +439,7 @@ ASTNode* astRoot = NULL;
     loop_for_cond
         : loop_for_cond COMMA lvl_logic
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | lvl_logic
@@ -471,7 +487,7 @@ ASTNode* astRoot = NULL;
     switch_case_list
         : switch_case_list delimiter_list switch_case
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | switch_case
@@ -873,7 +889,7 @@ ASTNode* astRoot = NULL;
     expr_list
         : expr_list COMMA expr
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | expr
@@ -958,7 +974,7 @@ ASTNode* astRoot = NULL;
     enum_elements
         : enum_elements COMMA enum_element
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | enum_element
@@ -993,7 +1009,7 @@ ASTNode* astRoot = NULL;
     fn_params_list
         : fn_params_list COMMA fn_parameter
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | fn_parameter
@@ -1020,7 +1036,7 @@ ASTNode* astRoot = NULL;
     var_decl_assign_list
         : var_decl_assign_list COMMA var_decl_assign
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | var_decl_assign
@@ -1112,7 +1128,7 @@ ASTNode* astRoot = NULL;
     lambda_capture_list
         : lambda_capture_list COMMA nameNode
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | nameNode
@@ -1145,7 +1161,7 @@ ASTNode* astRoot = NULL;
     class_member_list
         : class_member_list delimiter_list class_member
             {
-                astNodeLLAppend($1->data.nodeList.list, $3);
+                astNodeLLAppend($1, $3);
                 $$ = $1;
             }
         | class_member

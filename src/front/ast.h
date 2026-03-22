@@ -145,7 +145,7 @@ typedef struct ASTNode
       const char* name;
       // accessibility modifiers
       Modifier modifier;
-      // node of variable type
+      // TODO: node of variable type, currently unused
       ASTNode* type;
       // assignment expression
       ASTNode* expr;
@@ -311,7 +311,7 @@ void
 freeNode(ASTNode* node);
 
 void
-astNodeLLAppend(ASTNodeLL* list, ASTNode* node);
+astNodeLLAppend(ASTNode* list, ASTNode* node);
 
 ASTNode*
 newNodeList(ASTNode* first);

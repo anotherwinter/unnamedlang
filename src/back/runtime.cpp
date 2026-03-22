@@ -254,8 +254,8 @@ Runtime::call(FnNameID fnNameID,
 
   TypeID classID;
   // if calling on class instance or static method
-  if (auto cls = std::get_if<ClassInfo*>(&id.name)) {
-    classID = (*cls)->typeID;
+  if (auto classID_ = std::get_if<TypeID>(&id.name)) {
+    classID = *classID_;
   } else if (auto obj = std::get_if<ObjectHeader>(&id.name)) {
     classID = (*obj).objClass;
     if (classID == dynamicTypeID) {
@@ -267,7 +267,7 @@ Runtime::call(FnNameID fnNameID,
   Identifier resolvedID = _topLevel->resolveFunction(fnNameID, types, classID);
   if (!std::holds_alternative<FunctionInfo*>(resolvedID.name)) {
     // TODO: more verbose error messages
-    error("call: No overload");
+    error("call: No overload\n");
     return {};
   }
 
@@ -472,7 +472,7 @@ Runtime::classInstance(TypeID classID,
     return {};
   }
 
-  Identifier res = {};
+  Identifier res = { 0, classID };
   // if creating a non-builtin class instance, then allocate objectheader
   // otherwise treat call to ctor as a call to static member since
   // builtin classes allocate objects themselves
@@ -497,7 +497,7 @@ Runtime::classInstance(TypeID classID,
     return {};
   }
 
-  call(*ctorNameID, ctorArgs, res);
+  res = call(*ctorNameID, ctorArgs, res);
 
   return res;
 }
@@ -697,7 +697,10 @@ Runtime::callFunction(FunctionInfo* fn,
       _treewalk->eval(fn->code.entry);
       // if there was no longjmp, then there was no ret, return none
     } else {
-      res = { 0, fn->code.cb(*this, args) };
+      ObjectHeader resHdr = fn->code.cb(*this, args);
+      // if valuetype of result is not none, then returned actual object
+      if (resHdr.valueType != ValueType::None)
+        res = { 0, resHdr };
     }
   }
   // if called return

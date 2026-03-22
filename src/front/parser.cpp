@@ -37,7 +37,7 @@
 
 
 // First part of user prologue.
-#line 14 "bnf.y"
+#line 22 "bnf.y"
 
 #include <stdio.h>
 #include "bison_wrapper.h"
@@ -125,14 +125,15 @@ namespace yy {
 #line 126 "parser.cpp"
 
   /// Build a parser object.
-  parser::parser (Lexer& lexer_yyarg)
+  parser::parser (Lexer& lexer_yyarg, ParserContext& ctx_yyarg)
 #if YYDEBUG
     : yydebug_ (false),
       yycdebug_ (&std::cerr),
 #else
     :
 #endif
-      lexer (lexer_yyarg)
+      lexer (lexer_yyarg),
+      ctx (ctx_yyarg)
   {}
 
   parser::~parser ()
@@ -577,1344 +578,1352 @@ namespace yy {
           switch (yyn)
             {
   case 2: // program: opt_program_stmt_list
-#line 217 "bnf.y"
+#line 224 "bnf.y"
             {
                 astRoot = (yystack_[0].value.node);
             }
-#line 585 "parser.cpp"
+#line 586 "parser.cpp"
     break;
 
   case 7: // opt_program_stmt_list: program_stmt_list opt_delimiter_list
-#line 234 "bnf.y"
+#line 241 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[1].value.node);
             }
-#line 593 "parser.cpp"
+#line 594 "parser.cpp"
     break;
 
   case 8: // opt_program_stmt_list: opt_delimiter_list
-#line 238 "bnf.y"
+#line 245 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
             }
-#line 601 "parser.cpp"
+#line 602 "parser.cpp"
     break;
 
   case 9: // program_stmt_list: program_stmt_list delimiter_list program_stmt
-#line 245 "bnf.y"
+#line 252 "bnf.y"
             {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
             }
-#line 610 "parser.cpp"
+#line 611 "parser.cpp"
     break;
 
   case 10: // program_stmt_list: program_stmt
-#line 250 "bnf.y"
+#line 257 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 618 "parser.cpp"
+#line 619 "parser.cpp"
     break;
 
   case 11: // program_stmt: stmt
-#line 257 "bnf.y"
+#line 264 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 626 "parser.cpp"
+#line 627 "parser.cpp"
     break;
 
   case 12: // program_stmt: global_stmt
-#line 261 "bnf.y"
+#line 268 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 634 "parser.cpp"
+#line 635 "parser.cpp"
     break;
 
   case 13: // global_stmt: global_stmt_stmt
-#line 269 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 642 "parser.cpp"
-    break;
-
-  case 14: // global_stmt_stmt: class_def
 #line 276 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 650 "parser.cpp"
+#line 643 "parser.cpp"
+    break;
+
+  case 14: // global_stmt_stmt: class_def
+#line 283 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 651 "parser.cpp"
     break;
 
   case 15: // global_stmt_stmt: fn_def
-#line 280 "bnf.y"
+#line 287 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 658 "parser.cpp"
+#line 659 "parser.cpp"
     break;
 
   case 16: // global_stmt_stmt: enum_stmt
-#line 284 "bnf.y"
+#line 291 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 666 "parser.cpp"
+#line 667 "parser.cpp"
     break;
 
   case 17: // stmt: stmt_stmt
-#line 292 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 674 "parser.cpp"
-    break;
-
-  case 18: // stmt_stmt: var_decl
 #line 299 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 682 "parser.cpp"
+#line 675 "parser.cpp"
+    break;
+
+  case 18: // stmt_stmt: var_decl
+#line 306 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 683 "parser.cpp"
     break;
 
   case 19: // stmt_stmt: cntrl_cnstrct
-#line 303 "bnf.y"
+#line 310 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 690 "parser.cpp"
+#line 691 "parser.cpp"
     break;
 
   case 20: // stmt_stmt: del_stmt
-#line 307 "bnf.y"
+#line 314 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 698 "parser.cpp"
+#line 699 "parser.cpp"
     break;
 
   case 21: // stmt_stmt: assign
-#line 311 "bnf.y"
+#line 318 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 706 "parser.cpp"
+#line 707 "parser.cpp"
     break;
 
   case 22: // stmt_stmt: expr
-#line 315 "bnf.y"
+#line 322 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 714 "parser.cpp"
+#line 715 "parser.cpp"
     break;
 
-  case 23: // code_block: opt_delimiter_list LBRACE opt_delimiter_list opt_stmt_list RBRACE
-#line 323 "bnf.y"
+  case 23: // code_block: opt_delimiter_list LBRACE opt_stmt_list RBRACE
+#line 330 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[1].value.node);
             }
-#line 722 "parser.cpp"
+#line 723 "parser.cpp"
     break;
 
   case 24: // opt_stmt_list: stmt_list
-#line 330 "bnf.y"
+#line 337 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 730 "parser.cpp"
+#line 731 "parser.cpp"
     break;
 
   case 25: // opt_stmt_list: %empty
-#line 334 "bnf.y"
+#line 341 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
             }
-#line 738 "parser.cpp"
+#line 739 "parser.cpp"
     break;
 
-  case 26: // stmt_list: stmt_list delimiter_list stmt_stmt
-#line 341 "bnf.y"
+  case 26: // $@1: %empty
+#line 348 "bnf.y"
             {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
+                ctx.nodeLLStack.push(newNodeList((yystack_[0].value.node)));
             }
 #line 747 "parser.cpp"
     break;
 
-  case 27: // stmt_list: stmt_stmt
-#line 346 "bnf.y"
+  case 27: // stmt_list: opt_delimiter_list stmt_stmt $@1 stmt_list_tail
+#line 352 "bnf.y"
             {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+              (yylhs.value.node) = ctx.nodeLLStack.top();
+              ctx.nodeLLStack.pop();
             }
-#line 755 "parser.cpp"
+#line 756 "parser.cpp"
     break;
 
-  case 28: // code_block_or_stmt: code_block
-#line 353 "bnf.y"
+  case 28: // stmt_list_tail: delimiter_list stmt_stmt stmt_list_tail
+#line 360 "bnf.y"
+            {
+                astNodeLLAppend(ctx.nodeLLStack.top(), (yystack_[1].value.node));
+            }
+#line 764 "parser.cpp"
+    break;
+
+  case 31: // code_block_or_stmt: code_block
+#line 369 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 763 "parser.cpp"
+#line 772 "parser.cpp"
     break;
 
-  case 29: // code_block_or_stmt: opt_delimiter_list stmt
-#line 357 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 771 "parser.cpp"
-    break;
-
-  case 30: // del_stmt: DEL expr
-#line 365 "bnf.y"
-            {
-                (yylhs.value.node) = newDelStmt((yystack_[0].value.node));
-            }
-#line 779 "parser.cpp"
-    break;
-
-  case 31: // cntrl_cnstrct: loop_whl
+  case 32: // code_block_or_stmt: opt_delimiter_list stmt
 #line 373 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 787 "parser.cpp"
+#line 780 "parser.cpp"
     break;
 
-  case 32: // cntrl_cnstrct: loop_for
-#line 377 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 795 "parser.cpp"
-    break;
-
-  case 33: // cntrl_cnstrct: switch_stmt
+  case 33: // del_stmt: DEL expr
 #line 381 "bnf.y"
             {
-                (yylhs.value.node) = (yystack_[0].value.node);
+                (yylhs.value.node) = newDelStmt((yystack_[0].value.node));
             }
-#line 803 "parser.cpp"
+#line 788 "parser.cpp"
     break;
 
-  case 34: // cntrl_cnstrct: ret_stmt
-#line 385 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 811 "parser.cpp"
-    break;
-
-  case 35: // cntrl_cnstrct: brk_stmt
+  case 34: // cntrl_cnstrct: loop_whl
 #line 389 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 819 "parser.cpp"
+#line 796 "parser.cpp"
     break;
 
-  case 36: // cntrl_cnstrct: if_stmt
+  case 35: // cntrl_cnstrct: loop_for
 #line 393 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 827 "parser.cpp"
+#line 804 "parser.cpp"
     break;
 
-  case 37: // cntrl_cnstrct: toss_stmt
+  case 36: // cntrl_cnstrct: switch_stmt
 #line 397 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 835 "parser.cpp"
+#line 812 "parser.cpp"
     break;
 
-  case 38: // loop_whl: WHL LPAREN expr RPAREN code_block_or_stmt
-#line 404 "bnf.y"
-            {
-                (yylhs.value.node) = newLoopWhl((yystack_[2].value.node), (yystack_[0].value.node));
-            }
-#line 843 "parser.cpp"
-    break;
-
-  case 39: // loop_for: FOR LPAREN loop_for_init COLON loop_for_cond COLON loop_for_post_iter RPAREN code_block_or_stmt
-#line 411 "bnf.y"
-            {
-                (yylhs.value.node) = newLoopFor((yystack_[6].value.node), (yystack_[4].value.node), (yystack_[2].value.node), (yystack_[0].value.node));
-            }
-#line 851 "parser.cpp"
-    break;
-
-  case 40: // loop_for_init: opt_expr_list
-#line 418 "bnf.y"
+  case 37: // cntrl_cnstrct: ret_stmt
+#line 401 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 859 "parser.cpp"
+#line 820 "parser.cpp"
     break;
 
-  case 41: // loop_for_cond: loop_for_cond COMMA lvl_logic
-#line 425 "bnf.y"
+  case 38: // cntrl_cnstrct: brk_stmt
+#line 405 "bnf.y"
             {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 828 "parser.cpp"
+    break;
+
+  case 39: // cntrl_cnstrct: if_stmt
+#line 409 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 836 "parser.cpp"
+    break;
+
+  case 40: // cntrl_cnstrct: toss_stmt
+#line 413 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 844 "parser.cpp"
+    break;
+
+  case 41: // loop_whl: WHL LPAREN expr RPAREN code_block_or_stmt
+#line 420 "bnf.y"
+            {
+                (yylhs.value.node) = newLoopWhl((yystack_[2].value.node), (yystack_[0].value.node));
+            }
+#line 852 "parser.cpp"
+    break;
+
+  case 42: // loop_for: FOR LPAREN loop_for_init COLON loop_for_cond COLON loop_for_post_iter RPAREN code_block_or_stmt
+#line 427 "bnf.y"
+            {
+                (yylhs.value.node) = newLoopFor((yystack_[6].value.node), (yystack_[4].value.node), (yystack_[2].value.node), (yystack_[0].value.node));
+            }
+#line 860 "parser.cpp"
+    break;
+
+  case 43: // loop_for_init: opt_expr_list
+#line 434 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
             }
 #line 868 "parser.cpp"
     break;
 
-  case 42: // loop_for_cond: lvl_logic
-#line 430 "bnf.y"
+  case 44: // loop_for_cond: loop_for_cond COMMA lvl_logic
+#line 441 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 877 "parser.cpp"
+    break;
+
+  case 45: // loop_for_cond: lvl_logic
+#line 446 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 876 "parser.cpp"
+#line 885 "parser.cpp"
     break;
 
-  case 43: // loop_for_post_iter: opt_expr_list
-#line 437 "bnf.y"
+  case 46: // loop_for_post_iter: opt_expr_list
+#line 453 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 884 "parser.cpp"
+#line 893 "parser.cpp"
     break;
 
-  case 44: // ret_stmt: RET
-#line 444 "bnf.y"
+  case 47: // ret_stmt: RET
+#line 460 "bnf.y"
             {
                 (yylhs.value.node) = newRetStmt(NULL);
             }
-#line 892 "parser.cpp"
+#line 901 "parser.cpp"
     break;
 
-  case 45: // ret_stmt: RET expr
-#line 448 "bnf.y"
+  case 48: // ret_stmt: RET expr
+#line 464 "bnf.y"
             {
                 (yylhs.value.node) = newRetStmt((yystack_[0].value.node));
             }
-#line 900 "parser.cpp"
+#line 909 "parser.cpp"
     break;
 
-  case 46: // switch_stmt: SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list opt_delimiter_list RBRACE
-#line 455 "bnf.y"
+  case 49: // switch_stmt: SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list opt_delimiter_list RBRACE
+#line 471 "bnf.y"
             {
                 (yylhs.value.node) = newSwitchStmt((yystack_[5].value.node), (yystack_[2].value.node));
             }
-#line 908 "parser.cpp"
+#line 917 "parser.cpp"
     break;
 
-  case 47: // opt_switch_case_list: switch_case_list
-#line 462 "bnf.y"
+  case 50: // opt_switch_case_list: switch_case_list
+#line 478 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 916 "parser.cpp"
+#line 925 "parser.cpp"
     break;
 
-  case 48: // opt_switch_case_list: %empty
-#line 466 "bnf.y"
+  case 51: // opt_switch_case_list: %empty
+#line 482 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 924 "parser.cpp"
-    break;
-
-  case 49: // switch_case_list: switch_case_list delimiter_list switch_case
-#line 473 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 933 "parser.cpp"
     break;
 
-  case 50: // switch_case_list: switch_case
-#line 478 "bnf.y"
+  case 52: // switch_case_list: switch_case_list delimiter_list switch_case
+#line 489 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 942 "parser.cpp"
+    break;
+
+  case 53: // switch_case_list: switch_case
+#line 494 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 941 "parser.cpp"
+#line 950 "parser.cpp"
     break;
 
-  case 51: // switch_case: expr COLON code_block_or_stmt
-#line 485 "bnf.y"
+  case 54: // switch_case: expr COLON code_block_or_stmt
+#line 501 "bnf.y"
             {
                 (yylhs.value.node) = newSwitchCase((yystack_[2].value.node), (yystack_[0].value.node), false);
             }
-#line 949 "parser.cpp"
+#line 958 "parser.cpp"
     break;
 
-  case 52: // switch_case: DEFAULT COLON code_block_or_stmt
-#line 489 "bnf.y"
+  case 55: // switch_case: DEFAULT COLON code_block_or_stmt
+#line 505 "bnf.y"
             {
                 (yylhs.value.node) = newSwitchCase(NULL, (yystack_[0].value.node), true);
             }
-#line 957 "parser.cpp"
+#line 966 "parser.cpp"
     break;
 
-  case 53: // brk_stmt: BRK LPAREN expr RPAREN
-#line 496 "bnf.y"
+  case 56: // brk_stmt: BRK LPAREN expr RPAREN
+#line 512 "bnf.y"
             {
                 (yylhs.value.node) = newBrkStmt((yystack_[1].value.node));
             }
-#line 965 "parser.cpp"
+#line 974 "parser.cpp"
     break;
 
-  case 54: // brk_stmt: BRK
-#line 500 "bnf.y"
+  case 57: // brk_stmt: BRK
+#line 516 "bnf.y"
             {
                 (yylhs.value.node) = newBrkStmt(NULL);
             }
-#line 973 "parser.cpp"
+#line 982 "parser.cpp"
     break;
 
-  case 55: // if_stmt: IF LPAREN expr RPAREN code_block_or_stmt opt_else
-#line 507 "bnf.y"
+  case 58: // if_stmt: IF LPAREN expr RPAREN code_block_or_stmt opt_else
+#line 523 "bnf.y"
             {
                 (yylhs.value.node) = newIfStmt((yystack_[3].value.node), (yystack_[1].value.node), (yystack_[0].value.node));
             }
-#line 981 "parser.cpp"
+#line 990 "parser.cpp"
     break;
 
-  case 56: // opt_else: ELSE code_block_or_stmt
-#line 514 "bnf.y"
+  case 59: // opt_else: ELSE code_block_or_stmt
+#line 530 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 989 "parser.cpp"
+#line 998 "parser.cpp"
     break;
 
-  case 57: // opt_else: %empty
-#line 518 "bnf.y"
+  case 60: // opt_else: %empty
+#line 534 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
             }
-#line 997 "parser.cpp"
+#line 1006 "parser.cpp"
     break;
 
-  case 58: // toss_stmt: TOSS expr
-#line 525 "bnf.y"
+  case 61: // toss_stmt: TOSS expr
+#line 541 "bnf.y"
             {
                 (yylhs.value.node) = newTossStmt((yystack_[0].value.node));
             }
-#line 1005 "parser.cpp"
+#line 1014 "parser.cpp"
     break;
 
-  case 59: // op_assign: EQUALS
-#line 533 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1013 "parser.cpp"
-    break;
-
-  case 60: // op_assign: ASSIGN_ADD
-#line 537 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1021 "parser.cpp"
-    break;
-
-  case 61: // op_assign: ASSIGN_SUB
-#line 541 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1029 "parser.cpp"
-    break;
-
-  case 62: // op_assign: ASSIGN_DIV
-#line 545 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1037 "parser.cpp"
-    break;
-
-  case 63: // op_assign: ASSIGN_MUL
+  case 62: // op_assign: EQUALS
 #line 549 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1045 "parser.cpp"
+#line 1022 "parser.cpp"
     break;
 
-  case 64: // op_assign: ASSIGN_MOD
+  case 63: // op_assign: ASSIGN_ADD
 #line 553 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1053 "parser.cpp"
+#line 1030 "parser.cpp"
     break;
 
-  case 65: // op_assign: ASSIGN_XOR
+  case 64: // op_assign: ASSIGN_SUB
 #line 557 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1061 "parser.cpp"
+#line 1038 "parser.cpp"
     break;
 
-  case 66: // op_assign: ASSIGN_SHIFTL
+  case 65: // op_assign: ASSIGN_DIV
 #line 561 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1069 "parser.cpp"
+#line 1046 "parser.cpp"
     break;
 
-  case 67: // op_assign: ASSIGN_SHIFTR
+  case 66: // op_assign: ASSIGN_MUL
 #line 565 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1077 "parser.cpp"
+#line 1054 "parser.cpp"
     break;
 
-  case 68: // op_assign: ASSIGN_AND
+  case 67: // op_assign: ASSIGN_MOD
 #line 569 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1085 "parser.cpp"
+#line 1062 "parser.cpp"
     break;
 
-  case 69: // op_assign: ASSIGN_OR
+  case 68: // op_assign: ASSIGN_XOR
 #line 573 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1093 "parser.cpp"
+#line 1070 "parser.cpp"
     break;
 
-  case 70: // op_logic: LOGIC_AND
-#line 580 "bnf.y"
+  case 69: // op_assign: ASSIGN_SHIFTL
+#line 577 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1101 "parser.cpp"
+#line 1078 "parser.cpp"
     break;
 
-  case 71: // op_logic: LOGIC_OR
-#line 584 "bnf.y"
+  case 70: // op_assign: ASSIGN_SHIFTR
+#line 581 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1109 "parser.cpp"
+#line 1086 "parser.cpp"
     break;
 
-  case 72: // op_cond: COND_GT
-#line 591 "bnf.y"
+  case 71: // op_assign: ASSIGN_AND
+#line 585 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1117 "parser.cpp"
+#line 1094 "parser.cpp"
     break;
 
-  case 73: // op_cond: COND_GEQ
-#line 595 "bnf.y"
+  case 72: // op_assign: ASSIGN_OR
+#line 589 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1125 "parser.cpp"
+#line 1102 "parser.cpp"
     break;
 
-  case 74: // op_cond: COND_LT
-#line 599 "bnf.y"
+  case 73: // op_logic: LOGIC_AND
+#line 596 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1133 "parser.cpp"
+#line 1110 "parser.cpp"
     break;
 
-  case 75: // op_cond: COND_LEQ
-#line 603 "bnf.y"
+  case 74: // op_logic: LOGIC_OR
+#line 600 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1141 "parser.cpp"
+#line 1118 "parser.cpp"
     break;
 
-  case 76: // op_cond: COND_EQ
+  case 75: // op_cond: COND_GT
 #line 607 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1149 "parser.cpp"
+#line 1126 "parser.cpp"
     break;
 
-  case 77: // op_cond: COND_NEQ
+  case 76: // op_cond: COND_GEQ
 #line 611 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1157 "parser.cpp"
+#line 1134 "parser.cpp"
     break;
 
-  case 78: // op_bitwise_xor: BIT_XOR
-#line 618 "bnf.y"
+  case 77: // op_cond: COND_LT
+#line 615 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1165 "parser.cpp"
+#line 1142 "parser.cpp"
     break;
 
-  case 79: // op_bitwise_or: BIT_OR
-#line 625 "bnf.y"
+  case 78: // op_cond: COND_LEQ
+#line 619 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1173 "parser.cpp"
+#line 1150 "parser.cpp"
     break;
 
-  case 80: // op_bitwise_and: BIT_AND
-#line 632 "bnf.y"
+  case 79: // op_cond: COND_EQ
+#line 623 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1181 "parser.cpp"
+#line 1158 "parser.cpp"
     break;
 
-  case 81: // op_bitwise_shift: BIT_SHIFTL
-#line 639 "bnf.y"
+  case 80: // op_cond: COND_NEQ
+#line 627 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1189 "parser.cpp"
+#line 1166 "parser.cpp"
     break;
 
-  case 82: // op_bitwise_shift: BIT_SHIFTR
-#line 643 "bnf.y"
+  case 81: // op_bitwise_xor: BIT_XOR
+#line 634 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1197 "parser.cpp"
+#line 1174 "parser.cpp"
     break;
 
-  case 83: // op_arithm_add: PLUS
-#line 650 "bnf.y"
+  case 82: // op_bitwise_or: BIT_OR
+#line 641 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1205 "parser.cpp"
+#line 1182 "parser.cpp"
     break;
 
-  case 84: // op_arithm_add: MINUS
-#line 654 "bnf.y"
+  case 83: // op_bitwise_and: BIT_AND
+#line 648 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1213 "parser.cpp"
+#line 1190 "parser.cpp"
     break;
 
-  case 85: // op_arithm_mul: STAR
-#line 661 "bnf.y"
+  case 84: // op_bitwise_shift: BIT_SHIFTL
+#line 655 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1221 "parser.cpp"
+#line 1198 "parser.cpp"
     break;
 
-  case 86: // op_arithm_mul: SLASH
-#line 665 "bnf.y"
+  case 85: // op_bitwise_shift: BIT_SHIFTR
+#line 659 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1229 "parser.cpp"
+#line 1206 "parser.cpp"
     break;
 
-  case 87: // op_unary_neg: MINUS
-#line 672 "bnf.y"
+  case 86: // op_arithm_add: PLUS
+#line 666 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1237 "parser.cpp"
+#line 1214 "parser.cpp"
     break;
 
-  case 88: // op_unary_logic_neg: BANG
-#line 679 "bnf.y"
+  case 87: // op_arithm_add: MINUS
+#line 670 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1245 "parser.cpp"
+#line 1222 "parser.cpp"
     break;
 
-  case 89: // op_unary_inc: UNARY_DEC
-#line 686 "bnf.y"
+  case 88: // op_arithm_mul: STAR
+#line 677 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1253 "parser.cpp"
+#line 1230 "parser.cpp"
     break;
 
-  case 90: // op_unary_inc: UNARY_INC
-#line 690 "bnf.y"
+  case 89: // op_arithm_mul: SLASH
+#line 681 "bnf.y"
             {
                 (yylhs.value.opType) = (yystack_[0].value.opType);
             }
-#line 1261 "parser.cpp"
+#line 1238 "parser.cpp"
     break;
 
-  case 91: // expr: lvl_logic
-#line 698 "bnf.y"
+  case 90: // op_unary_neg: MINUS
+#line 688 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1246 "parser.cpp"
+    break;
+
+  case 91: // op_unary_logic_neg: BANG
+#line 695 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1254 "parser.cpp"
+    break;
+
+  case 92: // op_unary_inc: UNARY_DEC
+#line 702 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1262 "parser.cpp"
+    break;
+
+  case 93: // op_unary_inc: UNARY_INC
+#line 706 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1270 "parser.cpp"
+    break;
+
+  case 94: // expr: lvl_logic
+#line 714 "bnf.y"
             { 
                 (yylhs.value.node) = (yystack_[0].value.node); 
             }
-#line 1269 "parser.cpp"
+#line 1278 "parser.cpp"
     break;
 
-  case 92: // lvl_logic: lvl_logic op_logic lvl_cond
-#line 705 "bnf.y"
+  case 95: // lvl_logic: lvl_logic op_logic lvl_cond
+#line 721 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1277 "parser.cpp"
+#line 1286 "parser.cpp"
     break;
 
-  case 93: // lvl_logic: lvl_cond
-#line 709 "bnf.y"
+  case 96: // lvl_logic: lvl_cond
+#line 725 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1285 "parser.cpp"
+#line 1294 "parser.cpp"
     break;
 
-  case 94: // lvl_cond: lvl_cond op_cond lvl_bitwise_xor
-#line 716 "bnf.y"
+  case 97: // lvl_cond: lvl_cond op_cond lvl_bitwise_xor
+#line 732 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1293 "parser.cpp"
+#line 1302 "parser.cpp"
     break;
 
-  case 95: // lvl_cond: lvl_bitwise_xor
-#line 720 "bnf.y"
+  case 98: // lvl_cond: lvl_bitwise_xor
+#line 736 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1301 "parser.cpp"
+#line 1310 "parser.cpp"
     break;
 
-  case 96: // lvl_bitwise_xor: lvl_bitwise_xor op_bitwise_xor lvl_bitwise_or
-#line 727 "bnf.y"
+  case 99: // lvl_bitwise_xor: lvl_bitwise_xor op_bitwise_xor lvl_bitwise_or
+#line 743 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1309 "parser.cpp"
+#line 1318 "parser.cpp"
     break;
 
-  case 97: // lvl_bitwise_xor: lvl_bitwise_or
-#line 731 "bnf.y"
+  case 100: // lvl_bitwise_xor: lvl_bitwise_or
+#line 747 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1317 "parser.cpp"
+#line 1326 "parser.cpp"
     break;
 
-  case 98: // lvl_bitwise_or: lvl_bitwise_or op_bitwise_or lvl_bitwise_and
-#line 738 "bnf.y"
+  case 101: // lvl_bitwise_or: lvl_bitwise_or op_bitwise_or lvl_bitwise_and
+#line 754 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1325 "parser.cpp"
+#line 1334 "parser.cpp"
     break;
 
-  case 99: // lvl_bitwise_or: lvl_bitwise_and
-#line 742 "bnf.y"
+  case 102: // lvl_bitwise_or: lvl_bitwise_and
+#line 758 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1333 "parser.cpp"
+#line 1342 "parser.cpp"
     break;
 
-  case 100: // lvl_bitwise_and: lvl_bitwise_and op_bitwise_and lvl_bitwise_shift
-#line 749 "bnf.y"
+  case 103: // lvl_bitwise_and: lvl_bitwise_and op_bitwise_and lvl_bitwise_shift
+#line 765 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1341 "parser.cpp"
+#line 1350 "parser.cpp"
     break;
 
-  case 101: // lvl_bitwise_and: lvl_bitwise_shift
-#line 753 "bnf.y"
+  case 104: // lvl_bitwise_and: lvl_bitwise_shift
+#line 769 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1349 "parser.cpp"
+#line 1358 "parser.cpp"
     break;
 
-  case 102: // lvl_bitwise_shift: lvl_bitwise_shift op_bitwise_shift lvl_arithm_add
-#line 760 "bnf.y"
+  case 105: // lvl_bitwise_shift: lvl_bitwise_shift op_bitwise_shift lvl_arithm_add
+#line 776 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1357 "parser.cpp"
+#line 1366 "parser.cpp"
     break;
 
-  case 103: // lvl_bitwise_shift: lvl_arithm_add
-#line 764 "bnf.y"
+  case 106: // lvl_bitwise_shift: lvl_arithm_add
+#line 780 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1365 "parser.cpp"
+#line 1374 "parser.cpp"
     break;
 
-  case 104: // lvl_arithm_add: lvl_arithm_add op_arithm_add lvl_arithm_mul
-#line 771 "bnf.y"
+  case 107: // lvl_arithm_add: lvl_arithm_add op_arithm_add lvl_arithm_mul
+#line 787 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1373 "parser.cpp"
+#line 1382 "parser.cpp"
     break;
 
-  case 105: // lvl_arithm_add: lvl_arithm_mul
-#line 775 "bnf.y"
+  case 108: // lvl_arithm_add: lvl_arithm_mul
+#line 791 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1381 "parser.cpp"
+#line 1390 "parser.cpp"
     break;
 
-  case 106: // lvl_arithm_mul: lvl_arithm_mul op_arithm_mul lvl_unary_neg
-#line 782 "bnf.y"
+  case 109: // lvl_arithm_mul: lvl_arithm_mul op_arithm_mul lvl_unary_neg
+#line 798 "bnf.y"
             {   
                 (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1389 "parser.cpp"
+#line 1398 "parser.cpp"
     break;
 
-  case 107: // lvl_arithm_mul: lvl_unary_neg
-#line 786 "bnf.y"
+  case 110: // lvl_arithm_mul: lvl_unary_neg
+#line 802 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1397 "parser.cpp"
+#line 1406 "parser.cpp"
     break;
 
-  case 108: // lvl_unary_neg: op_unary_neg lvl_unary_inc
-#line 793 "bnf.y"
+  case 111: // lvl_unary_neg: op_unary_neg lvl_unary_inc
+#line 809 "bnf.y"
             {
                 (yylhs.value.node) = newUnaryOp((yystack_[1].value.opType), (yystack_[0].value.node));
             }
-#line 1405 "parser.cpp"
+#line 1414 "parser.cpp"
     break;
 
-  case 109: // lvl_unary_neg: op_unary_logic_neg lvl_unary_inc
-#line 797 "bnf.y"
+  case 112: // lvl_unary_neg: op_unary_logic_neg lvl_unary_inc
+#line 813 "bnf.y"
             {
                 (yylhs.value.node) = newUnaryOp((yystack_[1].value.opType), (yystack_[0].value.node));
             }
-#line 1413 "parser.cpp"
+#line 1422 "parser.cpp"
     break;
 
-  case 110: // lvl_unary_neg: lvl_unary_inc
-#line 801 "bnf.y"
+  case 113: // lvl_unary_neg: lvl_unary_inc
+#line 817 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1421 "parser.cpp"
+#line 1430 "parser.cpp"
     break;
 
-  case 111: // lvl_unary_inc: op_unary_inc lvl_postfix
-#line 808 "bnf.y"
+  case 114: // lvl_unary_inc: op_unary_inc lvl_postfix
+#line 824 "bnf.y"
             {
                 (yylhs.value.node) = newUnaryOp((yystack_[1].value.opType), (yystack_[0].value.node));
             }
-#line 1429 "parser.cpp"
+#line 1438 "parser.cpp"
     break;
 
-  case 112: // lvl_unary_inc: lvl_postfix
-#line 812 "bnf.y"
+  case 115: // lvl_unary_inc: lvl_postfix
+#line 828 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1437 "parser.cpp"
+#line 1446 "parser.cpp"
     break;
 
-  case 113: // lvl_postfix: lvl_postfix DOT nameNode
-#line 819 "bnf.y"
+  case 116: // lvl_postfix: lvl_postfix DOT nameNode
+#line 835 "bnf.y"
             {   
                 (yylhs.value.node) = newMemberAccess((yystack_[2].value.node), (yystack_[0].value.node));   
             }
-#line 1445 "parser.cpp"
+#line 1454 "parser.cpp"
     break;
 
-  case 114: // lvl_postfix: lvl_postfix LPAREN opt_expr_list RPAREN
-#line 823 "bnf.y"
+  case 117: // lvl_postfix: lvl_postfix LPAREN opt_expr_list RPAREN
+#line 839 "bnf.y"
             {   
                 (yylhs.value.node) = newFnCall((yystack_[3].value.node), (yystack_[1].value.node));   
             }
-#line 1453 "parser.cpp"
+#line 1462 "parser.cpp"
     break;
 
-  case 115: // lvl_postfix: lvl_postfix LSQUARE opt_expr RSQUARE
-#line 827 "bnf.y"
+  case 118: // lvl_postfix: lvl_postfix LSQUARE opt_expr RSQUARE
+#line 843 "bnf.y"
             {   
                 (yylhs.value.node) = newArrayAccess((yystack_[3].value.node), (yystack_[1].value.node));   
             }
-#line 1461 "parser.cpp"
+#line 1470 "parser.cpp"
     break;
 
-  case 116: // lvl_postfix: primary
-#line 831 "bnf.y"
+  case 119: // lvl_postfix: primary
+#line 847 "bnf.y"
             {   
                 (yylhs.value.node) = (yystack_[0].value.node);    
             }
-#line 1469 "parser.cpp"
+#line 1478 "parser.cpp"
     break;
 
-  case 117: // primary: literal
-#line 838 "bnf.y"
+  case 120: // primary: literal
+#line 854 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1477 "parser.cpp"
+#line 1486 "parser.cpp"
     break;
 
-  case 118: // primary: nameNode
-#line 842 "bnf.y"
+  case 121: // primary: nameNode
+#line 858 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1485 "parser.cpp"
+#line 1494 "parser.cpp"
     break;
 
-  case 119: // primary: LPAREN expr RPAREN
-#line 846 "bnf.y"
+  case 122: // primary: LPAREN expr RPAREN
+#line 862 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[1].value.node);
             }
-#line 1493 "parser.cpp"
+#line 1502 "parser.cpp"
     break;
 
-  case 120: // opt_expr: expr
-#line 853 "bnf.y"
+  case 123: // opt_expr: expr
+#line 869 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1501 "parser.cpp"
+#line 1510 "parser.cpp"
     break;
 
-  case 121: // opt_expr: %empty
-#line 857 "bnf.y"
+  case 124: // opt_expr: %empty
+#line 873 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
             }
-#line 1509 "parser.cpp"
+#line 1518 "parser.cpp"
     break;
 
-  case 122: // opt_expr_list: expr_list
-#line 864 "bnf.y"
+  case 125: // opt_expr_list: expr_list
+#line 880 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1517 "parser.cpp"
+#line 1526 "parser.cpp"
     break;
 
-  case 123: // opt_expr_list: %empty
-#line 868 "bnf.y"
+  case 126: // opt_expr_list: %empty
+#line 884 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 1525 "parser.cpp"
-    break;
-
-  case 124: // expr_list: expr_list COMMA expr
-#line 875 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 1534 "parser.cpp"
     break;
 
-  case 125: // expr_list: expr
-#line 880 "bnf.y"
+  case 127: // expr_list: expr_list COMMA expr
+#line 891 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1543 "parser.cpp"
+    break;
+
+  case 128: // expr_list: expr
+#line 896 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1542 "parser.cpp"
+#line 1551 "parser.cpp"
     break;
 
-  case 126: // literal: TRUE
-#line 887 "bnf.y"
+  case 129: // literal: TRUE
+#line 903 "bnf.y"
             { 
                 (yylhs.value.node) = newBoolValue(true); 
             }
-#line 1550 "parser.cpp"
+#line 1559 "parser.cpp"
     break;
 
-  case 127: // literal: FALSE
-#line 891 "bnf.y"
+  case 130: // literal: FALSE
+#line 907 "bnf.y"
             {
                 (yylhs.value.node) = newBoolValue(false);
             }
-#line 1558 "parser.cpp"
+#line 1567 "parser.cpp"
     break;
 
-  case 128: // literal: NUMBER
-#line 895 "bnf.y"
+  case 131: // literal: NUMBER
+#line 911 "bnf.y"
             {
                 (yylhs.value.node) = newNumberValue((yystack_[0].value.numberValue));
             }
-#line 1566 "parser.cpp"
+#line 1575 "parser.cpp"
     break;
 
-  case 129: // literal: arr_initializer
-#line 899 "bnf.y"
+  case 132: // literal: arr_initializer
+#line 915 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1574 "parser.cpp"
+#line 1583 "parser.cpp"
     break;
 
-  case 130: // literal: STRING
-#line 903 "bnf.y"
+  case 133: // literal: STRING
+#line 919 "bnf.y"
             {
                 (yylhs.value.node) = newStringValue((yystack_[0].value.stringValue));
             }
-#line 1582 "parser.cpp"
+#line 1591 "parser.cpp"
     break;
 
-  case 131: // arr_initializer: LSQUARE RSQUARE
-#line 911 "bnf.y"
+  case 134: // arr_initializer: LSQUARE RSQUARE
+#line 927 "bnf.y"
             {
                 (yylhs.value.node) = newArray(NULL);
             }
-#line 1590 "parser.cpp"
+#line 1599 "parser.cpp"
     break;
 
-  case 132: // arr_initializer: LSQUARE expr_list RSQUARE
-#line 915 "bnf.y"
+  case 135: // arr_initializer: LSQUARE expr_list RSQUARE
+#line 931 "bnf.y"
             {
                 (yylhs.value.node) = newArray((yystack_[1].value.node));
             }
-#line 1598 "parser.cpp"
+#line 1607 "parser.cpp"
     break;
 
-  case 133: // nameNode: NAME
-#line 923 "bnf.y"
+  case 136: // nameNode: NAME
+#line 939 "bnf.y"
             {
                 (yylhs.value.node) = newName((yystack_[0].value.stringValue));
             }
-#line 1606 "parser.cpp"
+#line 1615 "parser.cpp"
     break;
 
-  case 134: // enum_stmt: ENUM nameNode LBRACE enum_opt_elements RBRACE
-#line 931 "bnf.y"
+  case 137: // enum_stmt: ENUM nameNode LBRACE enum_opt_elements RBRACE
+#line 947 "bnf.y"
             {
                 (yylhs.value.node) = newEnumDef((yystack_[3].value.node)->data.stringValue, (yystack_[1].value.node));
             }
-#line 1614 "parser.cpp"
+#line 1623 "parser.cpp"
     break;
 
-  case 135: // enum_element: delimiter_list nameNode
-#line 938 "bnf.y"
+  case 138: // enum_element: delimiter_list nameNode
+#line 954 "bnf.y"
             {
                 (yylhs.value.node) = newEnumElement((yystack_[0].value.node)->data.stringValue, NULL);
             }
-#line 1622 "parser.cpp"
+#line 1631 "parser.cpp"
     break;
 
-  case 136: // enum_element: delimiter_list nameNode EQUALS expr
-#line 942 "bnf.y"
+  case 139: // enum_element: delimiter_list nameNode EQUALS expr
+#line 958 "bnf.y"
             {
                 (yylhs.value.node) = newEnumElement((yystack_[2].value.node)->data.stringValue, (yystack_[0].value.node));
             }
-#line 1630 "parser.cpp"
+#line 1639 "parser.cpp"
     break;
 
-  case 137: // enum_opt_elements: enum_elements
-#line 949 "bnf.y"
+  case 140: // enum_opt_elements: enum_elements
+#line 965 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1638 "parser.cpp"
+#line 1647 "parser.cpp"
     break;
 
-  case 138: // enum_opt_elements: %empty
-#line 953 "bnf.y"
+  case 141: // enum_opt_elements: %empty
+#line 969 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 1646 "parser.cpp"
-    break;
-
-  case 139: // enum_elements: enum_elements COMMA enum_element
-#line 960 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 1655 "parser.cpp"
     break;
 
-  case 140: // enum_elements: enum_element
-#line 965 "bnf.y"
+  case 142: // enum_elements: enum_elements COMMA enum_element
+#line 976 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1664 "parser.cpp"
+    break;
+
+  case 143: // enum_elements: enum_element
+#line 981 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1663 "parser.cpp"
+#line 1672 "parser.cpp"
     break;
 
-  case 141: // fn_parameter: nameNode nameNode
-#line 973 "bnf.y"
+  case 144: // fn_parameter: nameNode nameNode
+#line 989 "bnf.y"
             {
                 (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
             }
-#line 1671 "parser.cpp"
+#line 1680 "parser.cpp"
     break;
 
-  case 142: // fn_parameter: var_type nameNode
-#line 977 "bnf.y"
+  case 145: // fn_parameter: var_type nameNode
+#line 993 "bnf.y"
             {
                 (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
             }
-#line 1679 "parser.cpp"
+#line 1688 "parser.cpp"
     break;
 
-  case 143: // fn_opt_params_list: fn_params_list
-#line 984 "bnf.y"
+  case 146: // fn_opt_params_list: fn_params_list
+#line 1000 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1687 "parser.cpp"
+#line 1696 "parser.cpp"
     break;
 
-  case 144: // fn_opt_params_list: %empty
-#line 988 "bnf.y"
+  case 147: // fn_opt_params_list: %empty
+#line 1004 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 1695 "parser.cpp"
-    break;
-
-  case 145: // fn_params_list: fn_params_list COMMA fn_parameter
-#line 995 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 1704 "parser.cpp"
     break;
 
-  case 146: // fn_params_list: fn_parameter
-#line 1000 "bnf.y"
+  case 148: // fn_params_list: fn_params_list COMMA fn_parameter
+#line 1011 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1713 "parser.cpp"
+    break;
+
+  case 149: // fn_params_list: fn_parameter
+#line 1016 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1712 "parser.cpp"
+#line 1721 "parser.cpp"
     break;
 
-  case 147: // fn_def: FN nameNode LPAREN fn_opt_params_list RPAREN code_block
-#line 1007 "bnf.y"
+  case 150: // fn_def: FN nameNode LPAREN fn_opt_params_list RPAREN code_block
+#line 1023 "bnf.y"
             {
                 (yylhs.value.node) = newFnDef((yystack_[4].value.node)->data.stringValue, (yystack_[2].value.node), (yystack_[0].value.node));
             }
-#line 1720 "parser.cpp"
+#line 1729 "parser.cpp"
     break;
 
-  case 148: // var_decl: VAR var_decl_assign_list
-#line 1015 "bnf.y"
+  case 151: // var_decl: VAR var_decl_assign_list
+#line 1031 "bnf.y"
             {
                 (yylhs.value.node) = newVarDeclBatch((yystack_[0].value.node));
-            }
-#line 1728 "parser.cpp"
-    break;
-
-  case 149: // var_decl_assign_list: var_decl_assign_list COMMA var_decl_assign
-#line 1022 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 1737 "parser.cpp"
     break;
 
-  case 150: // var_decl_assign_list: var_decl_assign
-#line 1027 "bnf.y"
+  case 152: // var_decl_assign_list: var_decl_assign_list COMMA var_decl_assign
+#line 1038 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1746 "parser.cpp"
+    break;
+
+  case 153: // var_decl_assign_list: var_decl_assign
+#line 1043 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1745 "parser.cpp"
+#line 1754 "parser.cpp"
     break;
 
-  case 151: // var_decl_assign: var_decl_modifiers nameNode EQUALS expr
-#line 1034 "bnf.y"
+  case 154: // var_decl_assign: var_decl_modifiers nameNode EQUALS expr
+#line 1050 "bnf.y"
             {
                 (yylhs.value.node) = newVarDecl((yystack_[2].value.node)->data.stringValue, (yystack_[3].value.modifier), (yystack_[0].value.node));
             }
-#line 1753 "parser.cpp"
+#line 1762 "parser.cpp"
     break;
 
-  case 152: // var_decl_assign: var_decl_modifiers nameNode
-#line 1038 "bnf.y"
+  case 155: // var_decl_assign: var_decl_modifiers nameNode
+#line 1054 "bnf.y"
             {
                 (yylhs.value.node) = newVarDecl((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.modifier), NULL);
             }
-#line 1761 "parser.cpp"
+#line 1770 "parser.cpp"
     break;
 
-  case 153: // var_decl_modifiers: var_decl_modifiers var_decl_modifier
-#line 1045 "bnf.y"
+  case 156: // var_decl_modifiers: var_decl_modifiers var_decl_modifier
+#line 1061 "bnf.y"
             {
                 (yylhs.value.modifier) = static_cast<Modifier>(to_underlying((yystack_[1].value.modifier)) | to_underlying((yystack_[0].value.modifier)));
             }
-#line 1769 "parser.cpp"
+#line 1778 "parser.cpp"
     break;
 
-  case 154: // var_decl_modifiers: %empty
-#line 1049 "bnf.y"
+  case 157: // var_decl_modifiers: %empty
+#line 1065 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::None;
             }
-#line 1777 "parser.cpp"
+#line 1786 "parser.cpp"
     break;
 
-  case 155: // var_decl_modifier: CONST
-#line 1056 "bnf.y"
+  case 158: // var_decl_modifier: CONST
+#line 1072 "bnf.y"
             {
                 (yylhs.value.modifier) = (yystack_[0].value.modifier);
             }
-#line 1785 "parser.cpp"
+#line 1794 "parser.cpp"
     break;
 
-  case 156: // var_decl_modifier: LOCAL
-#line 1060 "bnf.y"
+  case 159: // var_decl_modifier: LOCAL
+#line 1076 "bnf.y"
             {
                 (yylhs.value.modifier) = (yystack_[0].value.modifier);
             }
-#line 1793 "parser.cpp"
+#line 1802 "parser.cpp"
     break;
 
-  case 157: // var_type: VAR
-#line 1067 "bnf.y"
+  case 160: // var_type: VAR
+#line 1083 "bnf.y"
             {
                 (yylhs.value.node) = newName("var");
             }
-#line 1801 "parser.cpp"
+#line 1810 "parser.cpp"
     break;
 
-  case 158: // assign: expr op_assign assign_rhs
-#line 1075 "bnf.y"
+  case 161: // assign: expr op_assign assign_rhs
+#line 1091 "bnf.y"
             {
                 (yylhs.value.node) = newVarAssign((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));
             }
-#line 1809 "parser.cpp"
+#line 1818 "parser.cpp"
     break;
 
-  case 159: // assign_rhs: expr
-#line 1082 "bnf.y"
+  case 162: // assign_rhs: expr
+#line 1098 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1817 "parser.cpp"
+#line 1826 "parser.cpp"
     break;
 
-  case 160: // class_def: CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list opt_delimiter_list RBRACE
-#line 1129 "bnf.y"
+  case 163: // class_def: CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list opt_delimiter_list RBRACE
+#line 1145 "bnf.y"
             {
                 (yylhs.value.node) = newClassDef((yystack_[5].value.node)->data.stringValue, (yystack_[2].value.node));
             }
-#line 1825 "parser.cpp"
+#line 1834 "parser.cpp"
     break;
 
-  case 161: // opt_class_member_list: class_member_list
-#line 1136 "bnf.y"
+  case 164: // opt_class_member_list: class_member_list
+#line 1152 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 1833 "parser.cpp"
+#line 1842 "parser.cpp"
     break;
 
-  case 162: // opt_class_member_list: %empty
-#line 1140 "bnf.y"
+  case 165: // opt_class_member_list: %empty
+#line 1156 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 1841 "parser.cpp"
-    break;
-
-  case 163: // class_member_list: class_member_list delimiter_list class_member
-#line 1147 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node)->data.nodeList.list, (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 1850 "parser.cpp"
     break;
 
-  case 164: // class_member_list: class_member
-#line 1152 "bnf.y"
+  case 166: // class_member_list: class_member_list delimiter_list class_member
+#line 1163 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1859 "parser.cpp"
+    break;
+
+  case 167: // class_member_list: class_member
+#line 1168 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1858 "parser.cpp"
+#line 1867 "parser.cpp"
     break;
 
-  case 165: // class_member: class_member_mod_list var_type nameNode
-#line 1159 "bnf.y"
+  case 168: // class_member: class_member_mod_list var_type nameNode
+#line 1175 "bnf.y"
             {
                 (yylhs.value.node) = newClassFieldDef((yystack_[0].value.node)->data.stringValue, (yystack_[2].value.modifier), (yystack_[1].value.node));
             }
-#line 1866 "parser.cpp"
+#line 1875 "parser.cpp"
     break;
 
-  case 166: // class_member: class_member_mod_list fn_def
-#line 1163 "bnf.y"
+  case 169: // class_member: class_member_mod_list fn_def
+#line 1179 "bnf.y"
             {
                 (yylhs.value.node) = newClassMethodDef((yystack_[1].value.modifier), (yystack_[0].value.node));
             }
-#line 1874 "parser.cpp"
+#line 1883 "parser.cpp"
     break;
 
-  case 167: // class_member_mod_list: class_member_mod_list class_member_mod
-#line 1205 "bnf.y"
+  case 170: // class_member_mod_list: class_member_mod_list class_member_mod
+#line 1221 "bnf.y"
             {
                 (yylhs.value.modifier) = static_cast<Modifier>(static_cast<uint16_t>((yystack_[1].value.modifier)) | static_cast<uint16_t>((yystack_[0].value.modifier)));
             }
-#line 1882 "parser.cpp"
+#line 1891 "parser.cpp"
     break;
 
-  case 168: // class_member_mod_list: %empty
-#line 1209 "bnf.y"
+  case 171: // class_member_mod_list: %empty
+#line 1225 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::None;
             }
-#line 1890 "parser.cpp"
+#line 1899 "parser.cpp"
     break;
 
-  case 169: // class_member_mod: HIDDEN
-#line 1216 "bnf.y"
+  case 172: // class_member_mod: HIDDEN
+#line 1232 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Hidden;
             }
-#line 1898 "parser.cpp"
+#line 1907 "parser.cpp"
     break;
 
-  case 170: // class_member_mod: CONST
-#line 1220 "bnf.y"
+  case 173: // class_member_mod: CONST
+#line 1236 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Const;
             }
-#line 1906 "parser.cpp"
+#line 1915 "parser.cpp"
     break;
 
-  case 171: // class_member_mod: STATIC
-#line 1224 "bnf.y"
+  case 174: // class_member_mod: STATIC
+#line 1240 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Static;
             }
-#line 1914 "parser.cpp"
+#line 1923 "parser.cpp"
     break;
 
 
-#line 1918 "parser.cpp"
+#line 1927 "parser.cpp"
 
             default:
               break;
@@ -2103,202 +2112,202 @@ namespace yy {
 
 
 
-  const short parser::yypact_ninf_ = -225;
+  const short parser::yypact_ninf_ = -210;
 
-  const short parser::yytable_ninf_ = -163;
+  const short parser::yytable_ninf_ = -166;
 
   const short
   parser::yypact_[] =
   {
-      44,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,
-     394,   381,  -225,     7,   394,   -31,   -19,    -2,     2,    34,
-       7,   394,   394,     7,  -225,    18,  -225,    -6,  -225,    11,
-    -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,
-    -225,  -225,  -225,  -225,   409,   409,    30,   441,   -13,    83,
-      39,    53,    59,    29,    22,    50,  -225,  -225,   -20,  -225,
-    -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,    47,  -225,
-    -225,     5,    49,  -225,   394,   394,   394,   394,   394,    11,
-    -225,  -225,    48,    45,  -225,    10,  -225,  -225,  -225,   201,
-    -225,  -225,   -20,  -225,  -225,  -225,  -225,  -225,  -225,  -225,
-    -225,  -225,  -225,  -225,   394,  -225,  -225,   394,  -225,  -225,
-    -225,  -225,  -225,  -225,   394,  -225,   394,  -225,   394,  -225,
-     394,  -225,  -225,   394,  -225,  -225,   394,  -225,  -225,   394,
-       7,   394,   394,  -225,  -225,   394,     6,    55,    64,    43,
-    -225,    51,    69,    70,    68,    11,  -225,  -225,  -225,   108,
-    -225,  -225,  -225,  -225,    83,    39,    53,    59,    29,    22,
-      50,  -225,  -225,    85,  -225,    80,  -225,  -225,     7,  -225,
-      87,    81,     7,    11,    11,   394,    88,  -225,   -23,     8,
-    -225,    84,    90,  -225,   394,  -225,  -225,  -225,    11,     6,
-    -225,   229,  -225,    86,  -225,    24,   -13,   151,    11,    11,
-    -225,   -30,   126,  -225,    11,  -225,    99,  -225,  -225,    11,
-    -225,    11,  -225,   394,   394,    98,    11,    11,  -225,   100,
-     102,    -6,  -225,  -225,  -225,  -225,     7,  -225,   394,  -225,
-     313,  -225,   109,  -225,   -13,    11,   104,   131,    11,  -225,
-    -225,  -225,  -225,  -225,   106,    11,    11,  -225,  -225,  -225,
-    -225,  -225,   297,  -225,  -225
+      45,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,
+      22,   413,  -210,    -2,    22,    -7,    17,    20,    31,    33,
+      -2,    22,    22,    -2,  -210,    38,  -210,    29,  -210,    39,
+    -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,
+    -210,  -210,  -210,  -210,   125,   125,    36,   414,   -15,   127,
+      62,    68,    73,    19,    70,    76,  -210,  -210,   -25,  -210,
+    -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,    65,  -210,
+    -210,   -17,    71,  -210,    22,    22,    22,    22,    22,    39,
+    -210,  -210,    69,    63,  -210,     7,  -210,  -210,  -210,   192,
+    -210,  -210,   -25,  -210,  -210,  -210,  -210,  -210,  -210,  -210,
+    -210,  -210,  -210,  -210,    22,  -210,  -210,    22,  -210,  -210,
+    -210,  -210,  -210,  -210,    22,  -210,    22,  -210,    22,  -210,
+      22,  -210,  -210,    22,  -210,  -210,    22,  -210,  -210,    22,
+      -2,    22,    22,  -210,  -210,    22,     1,    74,    75,    77,
+    -210,    85,    81,    82,    96,    39,  -210,  -210,  -210,   102,
+    -210,  -210,  -210,  -210,   127,    62,    68,    73,    19,    70,
+      76,  -210,  -210,   100,  -210,    95,  -210,  -210,    -2,  -210,
+     103,    94,    -2,    39,    39,    22,   107,  -210,   -33,     2,
+    -210,   108,   105,  -210,    22,  -210,  -210,  -210,    39,     1,
+    -210,   260,  -210,    99,  -210,    40,   -15,   143,    39,    39,
+    -210,    66,   151,  -210,    39,  -210,   123,  -210,  -210,    10,
+    -210,    39,  -210,    22,    22,   121,    39,    39,  -210,   122,
+     129,    29,  -210,  -210,  -210,  -210,    -2,  -210,    22,  -210,
+     344,   131,  -210,  -210,   137,  -210,   -15,    39,   134,   360,
+      39,  -210,  -210,  -210,  -210,  -210,  -210,    39,  -210,  -210,
+    -210,  -210,    39,  -210,   276,  -210,    39,  -210
   };
 
   const unsigned char
   parser::yydefact_[] =
   {
-       4,   130,   128,   126,   127,   133,    87,    88,    89,    90,
-       0,     0,     6,     0,    44,     0,     0,     0,     0,    54,
-       0,     0,     0,     0,   154,     0,     8,     3,     2,     4,
-      10,    12,    13,    11,    17,    20,    19,    31,    32,    34,
-      33,    35,    36,    37,     0,     0,     0,    22,    91,    93,
-      95,    97,    99,   101,   103,   105,   107,   110,   112,   116,
-     117,   129,   118,    16,    15,    18,    21,    14,     0,   131,
-     125,     0,     0,    45,     0,     0,   123,     0,     0,     4,
-      58,    30,     0,   148,   150,     0,     1,     5,     7,     3,
-     108,   109,   111,    59,    60,    61,    62,    63,    64,    65,
-      66,    67,    68,    69,     0,    70,    71,     0,    72,    73,
-      74,    75,    76,    77,     0,    78,     0,    79,     0,    80,
-       0,    81,    82,     0,    84,    83,     0,    85,    86,     0,
-       0,   123,   121,   119,   132,     0,   144,     0,     0,     0,
-      40,   122,     0,     0,     0,   138,   154,   155,   156,   152,
-     153,     9,   159,   158,    92,    94,    96,    98,   100,   102,
-     104,   106,   113,     0,   120,     0,   124,   157,     0,   146,
-       0,   143,     0,     4,     4,     0,     0,    53,   168,     0,
-     140,     0,   137,   149,     0,   114,   115,   141,     4,     0,
-     142,     0,    28,    57,    38,     0,    42,    48,     4,   161,
-     164,     0,   135,   134,     0,   151,     0,   147,   145,     4,
-      29,     4,    55,   123,     0,     0,     4,    47,    50,     0,
-       0,   168,   170,   171,   169,   166,     0,   167,     0,   139,
-      25,    56,     0,    43,    41,     4,     0,     0,     4,   160,
-     163,   165,   136,    27,     0,    24,     4,    52,    46,    49,
-      51,    23,     0,    39,    26
+       4,   133,   131,   129,   130,   136,    90,    91,    92,    93,
+       0,     0,     6,     0,    47,     0,     0,     0,     0,    57,
+       0,     0,     0,     0,   157,     0,     8,     3,     2,     4,
+      10,    12,    13,    11,    17,    20,    19,    34,    35,    37,
+      36,    38,    39,    40,     0,     0,     0,    22,    94,    96,
+      98,   100,   102,   104,   106,   108,   110,   113,   115,   119,
+     120,   132,   121,    16,    15,    18,    21,    14,     0,   134,
+     128,     0,     0,    48,     0,     0,   126,     0,     0,     4,
+      61,    33,     0,   151,   153,     0,     1,     5,     7,     3,
+     111,   112,   114,    62,    63,    64,    65,    66,    67,    68,
+      69,    70,    71,    72,     0,    73,    74,     0,    75,    76,
+      77,    78,    79,    80,     0,    81,     0,    82,     0,    83,
+       0,    84,    85,     0,    87,    86,     0,    88,    89,     0,
+       0,   126,   124,   122,   135,     0,   147,     0,     0,     0,
+      43,   125,     0,     0,     0,   141,   157,   158,   159,   155,
+     156,     9,   162,   161,    95,    97,    99,   101,   103,   105,
+     107,   109,   116,     0,   123,     0,   127,   160,     0,   149,
+       0,   146,     0,     4,     4,     0,     0,    56,   171,     0,
+     143,     0,   140,   152,     0,   117,   118,   144,     4,     0,
+     145,     0,    31,    60,    41,     0,    45,    51,     4,   164,
+     167,     0,   138,   137,     0,   154,     0,   150,   148,     4,
+      32,     4,    58,   126,     0,     0,     4,    50,    53,     0,
+       0,   171,   173,   174,   172,   169,     0,   170,     0,   142,
+       0,     0,    24,    59,     0,    46,    44,     4,     0,     0,
+       4,   163,   166,   168,   139,    26,    23,     4,    55,    49,
+      52,    54,    30,    42,    29,    27,    30,    28
   };
 
   const short
   parser::yypgoto_[] =
   {
-    -225,  -225,     3,   -22,  -225,  -225,    71,  -225,  -225,   -38,
-    -224,   -26,  -225,  -225,  -166,  -225,  -225,  -225,  -225,  -225,
-    -225,  -225,  -225,  -225,  -225,  -225,   -74,  -225,  -225,  -225,
-    -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,  -225,
-    -225,  -225,  -225,   -10,  -170,    60,    56,    57,    58,    61,
-      46,    54,    65,    42,   125,  -225,  -225,  -129,   168,  -225,
-    -225,    -4,  -225,   -18,  -225,  -225,    -5,  -225,  -225,   -12,
-    -225,  -225,    74,  -225,  -225,   -11,  -225,  -225,  -225,  -225,
-    -225,   -33,  -225,  -225
+    -210,  -210,     6,   -26,  -210,  -210,    92,  -210,  -210,    -9,
+    -209,    -5,  -210,  -210,  -210,   -71,  -167,  -210,  -210,  -210,
+    -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,   -51,  -210,
+    -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,  -210,
+    -210,  -210,  -210,  -210,  -210,   -10,  -157,    86,    78,    93,
+      83,    88,    87,    90,    60,    51,   165,  -210,  -210,  -129,
+     201,  -210,  -210,    -3,  -210,     9,  -210,  -210,    25,  -210,
+    -210,    16,  -210,  -210,    79,  -210,  -210,    18,  -210,  -210,
+    -210,  -210,  -210,    -1,  -210,  -210
   };
 
   const unsigned char
   parser::yydefgoto_[] =
   {
        0,    25,   191,    27,    28,    29,    30,    31,    32,    33,
-      34,   192,   244,   245,   193,    35,    36,    37,    38,   139,
-     195,   232,    39,    40,   216,   217,   218,    41,    42,   212,
-      43,   104,   107,   114,   116,   118,   120,   123,   126,   129,
-      44,    45,    46,    47,    48,    49,    50,    51,    52,    53,
-      54,    55,    56,    57,    58,    59,   165,   140,   141,    60,
-      61,    62,    63,   180,   181,   182,   169,   170,   171,    64,
-      65,    83,    84,    85,   150,   172,    66,   153,    67,   198,
-     199,   200,   201,   227
+      34,   192,   231,   232,   252,   255,   193,    35,    36,    37,
+      38,   139,   195,   234,    39,    40,   216,   217,   218,    41,
+      42,   212,    43,   104,   107,   114,   116,   118,   120,   123,
+     126,   129,    44,    45,    46,    47,    48,    49,    50,    51,
+      52,    53,    54,    55,    56,    57,    58,    59,   165,   140,
+     141,    60,    61,    62,    63,   180,   181,   182,   169,   170,
+     171,    64,    65,    83,    84,    85,   150,   172,    66,   153,
+      67,   198,   199,   200,   201,   227
   };
 
   const short
   parser::yytable_[] =
   {
-      68,    70,   163,    26,    73,   196,   243,    89,   194,    72,
-      74,    80,    81,     5,     5,     5,    79,     5,    86,    82,
-     130,   131,    75,  -162,    13,   105,   106,   132,   254,  -162,
-     124,   125,    88,     1,     2,     3,     4,     5,   222,    76,
-     167,   223,   224,    77,   234,   231,    87,     1,     2,     3,
-       4,     5,     6,   134,     7,   135,   121,   122,     8,     9,
-      87,   127,   128,    12,   137,   138,    70,   142,   143,   247,
-     115,    10,   250,   213,   214,    78,   167,    11,   147,   148,
-     253,   149,   144,   117,   233,    10,    90,    91,   119,   133,
-     136,    11,   175,   145,   152,   146,    12,   173,    13,    14,
-      15,   135,    16,    17,    18,    19,   174,    20,    21,    22,
-      23,   176,   177,   178,    24,   108,   109,   110,   111,   112,
-     113,    70,   164,   179,   184,   166,   162,   185,   186,   188,
-     203,   189,   168,   197,     1,     2,     3,     4,     5,     6,
-     204,     7,   228,   211,   209,     8,     9,   235,   239,   238,
-     248,   246,   251,   210,     1,     2,     3,     4,     5,     6,
-     151,     7,   207,   249,   187,     8,     9,   154,   190,   159,
-     155,    92,    10,   156,   205,   202,   157,   221,    11,    71,
-     160,   158,   179,    87,   208,   168,   229,   219,   240,   225,
-     226,   206,    10,   215,   161,   237,     0,     0,    11,     0,
-       0,   220,     0,    70,     1,     2,     3,     4,     5,     6,
-       0,     7,   230,   215,     0,     8,     9,     0,   242,   236,
-     183,     0,   241,   252,     0,     0,     0,   219,     0,     0,
-       0,     0,     1,     2,     3,     4,     5,     6,     0,     7,
-       0,     0,    10,     8,     9,     0,     0,     0,    11,     0,
-       0,     0,     0,    87,     0,    13,    14,    15,     0,    16,
-      17,    18,    19,     0,    20,    21,    22,    23,     0,     0,
-      10,    24,     0,     0,   209,     0,    11,     0,     0,     0,
-       0,     0,     0,     0,    14,    15,     0,    16,    17,    18,
-      19,     0,     0,    21,    22,     0,     0,     0,     0,    24,
-       1,     2,     3,     4,     5,     6,     0,     7,     0,     0,
-       0,     8,     9,     0,     0,     0,     1,     2,     3,     4,
-       5,     6,     0,     7,     0,     0,     0,     8,     9,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    10,     0,
-       0,     0,     0,     0,    11,     0,     0,     0,     0,    87,
-       0,     0,    14,    15,    10,    16,    17,    18,    19,     0,
-      11,    21,    22,     0,     0,     0,     0,    24,    14,    15,
-       0,    16,    17,    18,    19,     0,     0,    21,    22,     0,
-       0,     0,     0,    24,     1,     2,     3,     4,     5,     6,
-       0,     7,     0,     0,     0,     8,     9,     1,     2,     3,
+      68,    70,   163,    89,    73,     5,    26,   194,     5,     5,
+      72,    80,    81,  -165,     5,   130,   131,    79,   196,  -165,
+      82,   245,   132,   105,   106,     1,     2,     3,     4,     5,
+       6,   134,     7,   135,    74,    88,     8,     9,    86,     1,
+       2,     3,     4,     5,   233,   256,   121,   122,     1,     2,
+       3,     4,     5,     6,    87,     7,   -25,   236,    75,     8,
+       9,    76,    12,    10,   137,   138,    70,   142,   143,    11,
+     248,   167,    77,   251,    78,   147,   148,    10,   124,   125,
+     253,    87,   149,    11,   235,   144,    10,   127,   128,   213,
+     214,    12,    11,   115,   152,    90,    91,    12,   117,    13,
+      14,    15,   119,    16,    17,    18,    19,   133,    20,    21,
+      22,    23,   136,   146,   145,    24,   173,   174,   184,   179,
+      13,    70,   164,   176,   177,   166,   175,   162,     1,     2,
+       3,     4,     5,   168,   222,   135,   167,   223,   224,     8,
+       9,   178,   185,   186,   189,   188,     1,     2,     3,     4,
+       5,     6,   197,     7,   203,   204,   211,     8,     9,   108,
+     109,   110,   111,   112,   113,   187,    10,   228,   209,   190,
+     237,   240,    11,   221,   205,   241,   202,   246,   179,   247,
+     249,   151,   210,   207,    10,   257,   168,   219,   250,   161,
+      11,   239,   155,   154,   206,     1,     2,     3,     4,     5,
+       6,   157,     7,    70,   220,   215,     8,     9,   158,   156,
+     159,    92,    71,   229,   208,   230,   160,   225,   244,   226,
+     242,     0,   238,   243,     0,   183,   254,     0,     0,   219,
+     254,     0,     0,    10,     0,     0,     0,     0,     0,    11,
+       0,     0,     0,     0,    87,     0,    13,    14,    15,     0,
+      16,    17,    18,    19,     0,    20,    21,    22,    23,     0,
+       0,     0,    24,     1,     2,     3,     4,     5,     6,     0,
+       7,     0,     0,     0,     8,     9,     0,     0,     0,     1,
+       2,     3,     4,     5,     6,     0,     7,     0,     0,     0,
+       8,     9,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,    10,     0,     0,     0,   209,     0,    11,     0,     0,
+       0,     0,     0,     0,     0,    14,    15,    10,    16,    17,
+      18,    19,     0,    11,    21,    22,     0,     0,    87,     0,
+      24,    14,    15,     0,    16,    17,    18,    19,     0,     0,
+      21,    22,     0,     0,     0,     0,    24,     1,     2,     3,
        4,     5,     6,     0,     7,     0,     0,     0,     8,     9,
-       0,     0,     1,     2,     3,     4,     5,     0,     0,     0,
-       0,     0,    10,     8,     9,     0,     0,     0,    11,    69,
+       0,     0,     0,     1,     2,     3,     4,     5,     6,     0,
+       7,     0,     0,     0,     8,     9,     0,     0,     0,     0,
        0,     0,     0,     0,     0,    10,     0,     0,     0,     0,
-       0,    11,     0,     0,     0,     0,     0,     0,     0,     0,
-      10,     0,     0,     0,     0,     0,    11,    93,    94,    95,
-      96,    97,    98,    99,   100,   101,   102,   103
+       0,    11,     0,     0,     0,     0,     0,     0,     0,    14,
+      15,    10,    16,    17,    18,    19,     0,    11,    21,    22,
+       0,     0,    87,     0,    24,     0,     1,     2,     3,     4,
+       5,     6,   215,     7,     0,     0,     0,     8,     9,     0,
+      93,    94,    95,    96,    97,    98,    99,   100,   101,   102,
+     103,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,    10,     0,     0,     0,     0,     0,
+      11,    69
   };
 
   const short
   parser::yycheck_[] =
   {
-      10,    11,   131,     0,    14,   175,   230,    29,   174,    13,
-      41,    21,    22,     7,     7,     7,    20,     7,     0,    23,
-      40,    41,    41,    46,    54,    38,    39,    47,   252,    52,
-       8,     9,    29,     3,     4,     5,     6,     7,    68,    41,
-      70,    71,    72,    41,   214,   211,    52,     3,     4,     5,
-       6,     7,     8,    48,    10,    50,    27,    28,    14,    15,
-      52,    11,    12,    52,    74,    75,    76,    77,    78,   235,
-      31,    41,   238,    49,    50,    41,    70,    47,    68,    69,
-     246,    85,    79,    30,   213,    41,    44,    45,    29,    42,
-      41,    47,    49,    45,   104,    50,    52,    42,    54,    55,
-      56,    50,    58,    59,    60,    61,    42,    63,    64,    65,
-      66,    42,    42,    45,    70,    32,    33,    34,    35,    36,
-      37,   131,   132,   145,    16,   135,   130,    42,    48,    42,
-      46,    50,   136,    45,     3,     4,     5,     6,     7,     8,
-      50,    10,    16,    57,    45,    14,    15,    49,    46,    49,
-      46,    42,    46,   191,     3,     4,     5,     6,     7,     8,
-      89,    10,   188,   237,   168,    14,    15,   107,   172,   123,
-     114,    46,    41,   116,   184,   179,   118,   199,    47,    11,
-     126,   120,   204,    52,   189,   189,   204,   197,   221,   201,
-     201,   188,    41,    62,   129,   217,    -1,    -1,    47,    -1,
-      -1,   198,    -1,   213,     3,     4,     5,     6,     7,     8,
-      -1,    10,   209,    62,    -1,    14,    15,    -1,   228,   216,
-     146,    -1,   226,   245,    -1,    -1,    -1,   237,    -1,    -1,
-      -1,    -1,     3,     4,     5,     6,     7,     8,    -1,    10,
-      -1,    -1,    41,    14,    15,    -1,    -1,    -1,    47,    -1,
-      -1,    -1,    -1,    52,    -1,    54,    55,    56,    -1,    58,
-      59,    60,    61,    -1,    63,    64,    65,    66,    -1,    -1,
-      41,    70,    -1,    -1,    45,    -1,    47,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    55,    56,    -1,    58,    59,    60,
-      61,    -1,    -1,    64,    65,    -1,    -1,    -1,    -1,    70,
-       3,     4,     5,     6,     7,     8,    -1,    10,    -1,    -1,
-      -1,    14,    15,    -1,    -1,    -1,     3,     4,     5,     6,
-       7,     8,    -1,    10,    -1,    -1,    -1,    14,    15,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    41,    -1,
-      -1,    -1,    -1,    -1,    47,    -1,    -1,    -1,    -1,    52,
-      -1,    -1,    55,    56,    41,    58,    59,    60,    61,    -1,
-      47,    64,    65,    -1,    -1,    -1,    -1,    70,    55,    56,
-      -1,    58,    59,    60,    61,    -1,    -1,    64,    65,    -1,
-      -1,    -1,    -1,    70,     3,     4,     5,     6,     7,     8,
-      -1,    10,    -1,    -1,    -1,    14,    15,     3,     4,     5,
+      10,    11,   131,    29,    14,     7,     0,   174,     7,     7,
+      13,    21,    22,    46,     7,    40,    41,    20,   175,    52,
+      23,   230,    47,    38,    39,     3,     4,     5,     6,     7,
+       8,    48,    10,    50,    41,    29,    14,    15,     0,     3,
+       4,     5,     6,     7,   211,   254,    27,    28,     3,     4,
+       5,     6,     7,     8,    52,    10,    46,   214,    41,    14,
+      15,    41,    52,    41,    74,    75,    76,    77,    78,    47,
+     237,    70,    41,   240,    41,    68,    69,    41,     8,     9,
+     247,    52,    85,    47,   213,    79,    41,    11,    12,    49,
+      50,    52,    47,    31,   104,    44,    45,    52,    30,    54,
+      55,    56,    29,    58,    59,    60,    61,    42,    63,    64,
+      65,    66,    41,    50,    45,    70,    42,    42,    16,   145,
+      54,   131,   132,    42,    42,   135,    49,   130,     3,     4,
+       5,     6,     7,   136,    68,    50,    70,    71,    72,    14,
+      15,    45,    42,    48,    50,    42,     3,     4,     5,     6,
+       7,     8,    45,    10,    46,    50,    57,    14,    15,    32,
+      33,    34,    35,    36,    37,   168,    41,    16,    45,   172,
+      49,    49,    47,   199,   184,    46,   179,    46,   204,    42,
+      46,    89,   191,   188,    41,   256,   189,   197,   239,   129,
+      47,   217,   114,   107,   188,     3,     4,     5,     6,     7,
+       8,   118,    10,   213,   198,    62,    14,    15,   120,   116,
+     123,    46,    11,   204,   189,   209,   126,   201,   228,   201,
+     221,    -1,   216,   226,    -1,   146,   252,    -1,    -1,   239,
+     256,    -1,    -1,    41,    -1,    -1,    -1,    -1,    -1,    47,
+      -1,    -1,    -1,    -1,    52,    -1,    54,    55,    56,    -1,
+      58,    59,    60,    61,    -1,    63,    64,    65,    66,    -1,
+      -1,    -1,    70,     3,     4,     5,     6,     7,     8,    -1,
+      10,    -1,    -1,    -1,    14,    15,    -1,    -1,    -1,     3,
+       4,     5,     6,     7,     8,    -1,    10,    -1,    -1,    -1,
+      14,    15,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    41,    -1,    -1,    -1,    45,    -1,    47,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    55,    56,    41,    58,    59,
+      60,    61,    -1,    47,    64,    65,    -1,    -1,    52,    -1,
+      70,    55,    56,    -1,    58,    59,    60,    61,    -1,    -1,
+      64,    65,    -1,    -1,    -1,    -1,    70,     3,     4,     5,
        6,     7,     8,    -1,    10,    -1,    -1,    -1,    14,    15,
-      -1,    -1,     3,     4,     5,     6,     7,    -1,    -1,    -1,
-      -1,    -1,    41,    14,    15,    -1,    -1,    -1,    47,    48,
+      -1,    -1,    -1,     3,     4,     5,     6,     7,     8,    -1,
+      10,    -1,    -1,    -1,    14,    15,    -1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,    -1,    41,    -1,    -1,    -1,    -1,
-      -1,    47,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      41,    -1,    -1,    -1,    -1,    -1,    47,    16,    17,    18,
-      19,    20,    21,    22,    23,    24,    25,    26
+      -1,    47,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    55,
+      56,    41,    58,    59,    60,    61,    -1,    47,    64,    65,
+      -1,    -1,    52,    -1,    70,    -1,     3,     4,     5,     6,
+       7,     8,    62,    10,    -1,    -1,    -1,    14,    15,    -1,
+      16,    17,    18,    19,    20,    21,    22,    23,    24,    25,
+      26,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    41,    -1,    -1,    -1,    -1,    -1,
+      47,    48
   };
 
   const unsigned char
@@ -2307,29 +2316,29 @@ namespace yy {
        0,     3,     4,     5,     6,     7,     8,    10,    14,    15,
       41,    47,    52,    54,    55,    56,    58,    59,    60,    61,
       63,    64,    65,    66,    70,    76,    77,    78,    79,    80,
-      81,    82,    83,    84,    85,    90,    91,    92,    93,    97,
-      98,   102,   103,   105,   115,   116,   117,   118,   119,   120,
-     121,   122,   123,   124,   125,   126,   127,   128,   129,   130,
-     134,   135,   136,   137,   144,   145,   151,   153,   118,    48,
-     118,   133,   136,   118,    41,    41,    41,    41,    41,   136,
-     118,   118,   136,   146,   147,   148,     0,    52,    77,    78,
-     128,   128,   129,    16,    17,    18,    19,    20,    21,    22,
-      23,    24,    25,    26,   106,    38,    39,   107,    32,    33,
-      34,    35,    36,    37,   108,    31,   109,    30,   110,    29,
-     111,    27,    28,   112,     8,     9,   113,    11,    12,   114,
-      40,    41,    47,    42,    48,    50,    41,   118,   118,    94,
-     132,   133,   118,   118,    77,    45,    50,    68,    69,   136,
-     149,    81,   118,   152,   120,   121,   122,   123,   124,   125,
-     126,   127,   136,   132,   118,   131,   118,    70,   136,   141,
-     142,   143,   150,    42,    42,    49,    42,    42,    45,    78,
-     138,   139,   140,   147,    16,    42,    48,   136,    42,    50,
-     136,    77,    86,    89,    89,    95,   119,    45,   154,   155,
-     156,   157,   136,    46,    50,   118,    77,    86,   141,    45,
-      84,    57,   104,    49,    50,    62,    99,   100,   101,   118,
-      77,    78,    68,    71,    72,   144,   150,   158,    16,   138,
-      77,    89,    96,   132,   119,    49,    77,    78,    49,    46,
-     156,   136,   118,    85,    87,    88,    42,    89,    46,   101,
-      89,    46,    78,    89,    85
+      81,    82,    83,    84,    85,    92,    93,    94,    95,    99,
+     100,   104,   105,   107,   117,   118,   119,   120,   121,   122,
+     123,   124,   125,   126,   127,   128,   129,   130,   131,   132,
+     136,   137,   138,   139,   146,   147,   153,   155,   120,    48,
+     120,   135,   138,   120,    41,    41,    41,    41,    41,   138,
+     120,   120,   138,   148,   149,   150,     0,    52,    77,    78,
+     130,   130,   131,    16,    17,    18,    19,    20,    21,    22,
+      23,    24,    25,    26,   108,    38,    39,   109,    32,    33,
+      34,    35,    36,    37,   110,    31,   111,    30,   112,    29,
+     113,    27,    28,   114,     8,     9,   115,    11,    12,   116,
+      40,    41,    47,    42,    48,    50,    41,   120,   120,    96,
+     134,   135,   120,   120,    77,    45,    50,    68,    69,   138,
+     151,    81,   120,   154,   122,   123,   124,   125,   126,   127,
+     128,   129,   138,   134,   120,   133,   120,    70,   138,   143,
+     144,   145,   152,    42,    42,    49,    42,    42,    45,    78,
+     140,   141,   142,   149,    16,    42,    48,   138,    42,    50,
+     138,    77,    86,    91,    91,    97,   121,    45,   156,   157,
+     158,   159,   138,    46,    50,   120,    77,    86,   143,    45,
+      84,    57,   106,    49,    50,    62,   101,   102,   103,   120,
+      77,    78,    68,    71,    72,   146,   152,   160,    16,   140,
+      77,    87,    88,    91,    98,   134,   121,    49,    77,    78,
+      49,    46,   158,   138,   120,    85,    46,    42,    91,    46,
+     103,    91,    89,    91,    78,    90,    85,    90
   };
 
   const unsigned char
@@ -2337,22 +2346,22 @@ namespace yy {
   {
        0,    75,    76,    77,    77,    78,    78,    79,    79,    80,
       80,    81,    81,    82,    83,    83,    83,    84,    85,    85,
-      85,    85,    85,    86,    87,    87,    88,    88,    89,    89,
-      90,    91,    91,    91,    91,    91,    91,    91,    92,    93,
-      94,    95,    95,    96,    97,    97,    98,    99,    99,   100,
-     100,   101,   101,   102,   102,   103,   104,   104,   105,   106,
-     106,   106,   106,   106,   106,   106,   106,   106,   106,   106,
-     107,   107,   108,   108,   108,   108,   108,   108,   109,   110,
-     111,   112,   112,   113,   113,   114,   114,   115,   116,   117,
-     117,   118,   119,   119,   120,   120,   121,   121,   122,   122,
-     123,   123,   124,   124,   125,   125,   126,   126,   127,   127,
-     127,   128,   128,   129,   129,   129,   129,   130,   130,   130,
-     131,   131,   132,   132,   133,   133,   134,   134,   134,   134,
-     134,   135,   135,   136,   137,   138,   138,   139,   139,   140,
-     140,   141,   141,   142,   142,   143,   143,   144,   145,   146,
-     146,   147,   147,   148,   148,   149,   149,   150,   151,   152,
-     153,   154,   154,   155,   155,   156,   156,   157,   157,   158,
-     158,   158
+      85,    85,    85,    86,    87,    87,    89,    88,    90,    90,
+      90,    91,    91,    92,    93,    93,    93,    93,    93,    93,
+      93,    94,    95,    96,    97,    97,    98,    99,    99,   100,
+     101,   101,   102,   102,   103,   103,   104,   104,   105,   106,
+     106,   107,   108,   108,   108,   108,   108,   108,   108,   108,
+     108,   108,   108,   109,   109,   110,   110,   110,   110,   110,
+     110,   111,   112,   113,   114,   114,   115,   115,   116,   116,
+     117,   118,   119,   119,   120,   121,   121,   122,   122,   123,
+     123,   124,   124,   125,   125,   126,   126,   127,   127,   128,
+     128,   129,   129,   129,   130,   130,   131,   131,   131,   131,
+     132,   132,   132,   133,   133,   134,   134,   135,   135,   136,
+     136,   136,   136,   136,   137,   137,   138,   139,   140,   140,
+     141,   141,   142,   142,   143,   143,   144,   144,   145,   145,
+     146,   147,   148,   148,   149,   149,   150,   150,   151,   151,
+     152,   153,   154,   155,   156,   156,   157,   157,   158,   158,
+     159,   159,   160,   160,   160
   };
 
   const signed char
@@ -2360,22 +2369,22 @@ namespace yy {
   {
        0,     2,     1,     1,     0,     2,     1,     2,     1,     3,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     5,     1,     0,     3,     1,     1,     2,
-       2,     1,     1,     1,     1,     1,     1,     1,     5,     9,
-       1,     3,     1,     1,     1,     2,     8,     1,     0,     3,
-       1,     3,     3,     4,     1,     6,     2,     0,     2,     1,
+       1,     1,     1,     4,     1,     0,     0,     4,     3,     1,
+       0,     1,     2,     2,     1,     1,     1,     1,     1,     1,
+       1,     5,     9,     1,     3,     1,     1,     1,     2,     8,
+       1,     0,     3,     1,     3,     3,     4,     1,     6,     2,
+       0,     2,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     3,     1,     3,     1,     3,     1,     3,     1,
-       3,     1,     3,     1,     3,     1,     3,     1,     2,     2,
-       1,     2,     1,     3,     4,     4,     1,     1,     1,     3,
-       1,     0,     1,     0,     3,     1,     1,     1,     1,     1,
-       1,     2,     3,     1,     5,     2,     4,     1,     0,     3,
-       1,     2,     2,     1,     0,     3,     1,     6,     2,     3,
-       1,     4,     2,     2,     0,     1,     1,     1,     3,     1,
-       7,     1,     0,     3,     1,     3,     2,     2,     0,     1,
-       1,     1
+       1,     1,     1,     1,     1,     3,     1,     3,     1,     3,
+       1,     3,     1,     3,     1,     3,     1,     3,     1,     3,
+       1,     2,     2,     1,     2,     1,     3,     4,     4,     1,
+       1,     1,     3,     1,     0,     1,     0,     3,     1,     1,
+       1,     1,     1,     1,     2,     3,     1,     5,     2,     4,
+       1,     0,     3,     1,     2,     2,     1,     0,     3,     1,
+       6,     2,     3,     1,     4,     2,     2,     0,     1,     1,
+       1,     3,     1,     7,     1,     0,     3,     1,     3,     2,
+       2,     0,     1,     1,     1
   };
 
 
@@ -2399,18 +2408,19 @@ namespace yy {
   "LOWER_THAN_ELSE", "UMINUS", "$accept", "program", "opt_delimiter_list",
   "delimiter_list", "opt_program_stmt_list", "program_stmt_list",
   "program_stmt", "global_stmt", "global_stmt_stmt", "stmt", "stmt_stmt",
-  "code_block", "opt_stmt_list", "stmt_list", "code_block_or_stmt",
-  "del_stmt", "cntrl_cnstrct", "loop_whl", "loop_for", "loop_for_init",
-  "loop_for_cond", "loop_for_post_iter", "ret_stmt", "switch_stmt",
-  "opt_switch_case_list", "switch_case_list", "switch_case", "brk_stmt",
-  "if_stmt", "opt_else", "toss_stmt", "op_assign", "op_logic", "op_cond",
-  "op_bitwise_xor", "op_bitwise_or", "op_bitwise_and", "op_bitwise_shift",
-  "op_arithm_add", "op_arithm_mul", "op_unary_neg", "op_unary_logic_neg",
-  "op_unary_inc", "expr", "lvl_logic", "lvl_cond", "lvl_bitwise_xor",
-  "lvl_bitwise_or", "lvl_bitwise_and", "lvl_bitwise_shift",
-  "lvl_arithm_add", "lvl_arithm_mul", "lvl_unary_neg", "lvl_unary_inc",
-  "lvl_postfix", "primary", "opt_expr", "opt_expr_list", "expr_list",
-  "literal", "arr_initializer", "nameNode", "enum_stmt", "enum_element",
+  "code_block", "opt_stmt_list", "stmt_list", "$@1", "stmt_list_tail",
+  "code_block_or_stmt", "del_stmt", "cntrl_cnstrct", "loop_whl",
+  "loop_for", "loop_for_init", "loop_for_cond", "loop_for_post_iter",
+  "ret_stmt", "switch_stmt", "opt_switch_case_list", "switch_case_list",
+  "switch_case", "brk_stmt", "if_stmt", "opt_else", "toss_stmt",
+  "op_assign", "op_logic", "op_cond", "op_bitwise_xor", "op_bitwise_or",
+  "op_bitwise_and", "op_bitwise_shift", "op_arithm_add", "op_arithm_mul",
+  "op_unary_neg", "op_unary_logic_neg", "op_unary_inc", "expr",
+  "lvl_logic", "lvl_cond", "lvl_bitwise_xor", "lvl_bitwise_or",
+  "lvl_bitwise_and", "lvl_bitwise_shift", "lvl_arithm_add",
+  "lvl_arithm_mul", "lvl_unary_neg", "lvl_unary_inc", "lvl_postfix",
+  "primary", "opt_expr", "opt_expr_list", "expr_list", "literal",
+  "arr_initializer", "nameNode", "enum_stmt", "enum_element",
   "enum_opt_elements", "enum_elements", "fn_parameter",
   "fn_opt_params_list", "fn_params_list", "fn_def", "var_decl",
   "var_decl_assign_list", "var_decl_assign", "var_decl_modifiers",
@@ -2425,24 +2435,24 @@ namespace yy {
   const short
   parser::yyrline_[] =
   {
-       0,   216,   216,   223,   224,   228,   229,   233,   237,   244,
-     249,   256,   260,   268,   275,   279,   283,   291,   298,   302,
-     306,   310,   314,   322,   329,   334,   340,   345,   352,   356,
-     364,   372,   376,   380,   384,   388,   392,   396,   403,   410,
-     417,   424,   429,   436,   443,   447,   454,   461,   466,   472,
-     477,   484,   488,   495,   499,   506,   513,   517,   524,   532,
-     536,   540,   544,   548,   552,   556,   560,   564,   568,   572,
-     579,   583,   590,   594,   598,   602,   606,   610,   617,   624,
-     631,   638,   642,   649,   653,   660,   664,   671,   678,   685,
-     689,   697,   704,   708,   715,   719,   726,   730,   737,   741,
-     748,   752,   759,   763,   770,   774,   781,   785,   792,   796,
-     800,   807,   811,   818,   822,   826,   830,   837,   841,   845,
-     852,   857,   863,   868,   874,   879,   886,   890,   894,   898,
-     902,   910,   914,   922,   930,   937,   941,   948,   953,   959,
-     964,   972,   976,   983,   988,   994,   999,  1006,  1014,  1021,
-    1026,  1033,  1037,  1044,  1049,  1055,  1059,  1066,  1074,  1081,
-    1128,  1135,  1140,  1146,  1151,  1158,  1162,  1204,  1209,  1215,
-    1219,  1223
+       0,   223,   223,   230,   231,   235,   236,   240,   244,   251,
+     256,   263,   267,   275,   282,   286,   290,   298,   305,   309,
+     313,   317,   321,   329,   336,   341,   348,   347,   359,   363,
+     364,   368,   372,   380,   388,   392,   396,   400,   404,   408,
+     412,   419,   426,   433,   440,   445,   452,   459,   463,   470,
+     477,   482,   488,   493,   500,   504,   511,   515,   522,   529,
+     533,   540,   548,   552,   556,   560,   564,   568,   572,   576,
+     580,   584,   588,   595,   599,   606,   610,   614,   618,   622,
+     626,   633,   640,   647,   654,   658,   665,   669,   676,   680,
+     687,   694,   701,   705,   713,   720,   724,   731,   735,   742,
+     746,   753,   757,   764,   768,   775,   779,   786,   790,   797,
+     801,   808,   812,   816,   823,   827,   834,   838,   842,   846,
+     853,   857,   861,   868,   873,   879,   884,   890,   895,   902,
+     906,   910,   914,   918,   926,   930,   938,   946,   953,   957,
+     964,   969,   975,   980,   988,   992,   999,  1004,  1010,  1015,
+    1022,  1030,  1037,  1042,  1049,  1053,  1060,  1065,  1071,  1075,
+    1082,  1090,  1097,  1144,  1151,  1156,  1162,  1167,  1174,  1178,
+    1220,  1225,  1231,  1235,  1239
   };
 
   void
@@ -2527,6 +2537,6 @@ namespace yy {
   }
 
 } // yy
-#line 2531 "parser.cpp"
+#line 2541 "parser.cpp"
 
-#line 1229 "bnf.y"
+#line 1245 "bnf.y"

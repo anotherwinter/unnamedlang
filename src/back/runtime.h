@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <ostream>
 #include <setjmp.h>
 #include <string>
 #include <unordered_map>
@@ -301,7 +302,7 @@ public:
   template<size_t N, typename... Args>
   void error(const char (&fmt)[N], Args&&... args)
   {
-    std::printf(fmt, std::forward<Args>(args)...);
+    std::fprintf(stderr, fmt, std::forward<Args>(args)...);
 
     setExceptionFlag();
     runtimeRecover();

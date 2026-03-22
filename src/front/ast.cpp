@@ -54,7 +54,8 @@ tokType2OpType(TokenType tokType, bool unary)
 const char*
 op2String(OpType opType)
 {
-  return _opTypeStr[to_underlying(opType)];
+  // substract 1 since enum values are 1-based
+  return _opTypeStr[to_underlying(opType) - 1];
 }
 
 ASTNode*
@@ -285,11 +286,11 @@ astNodeLLCreate(ASTNode* node)
 
 /* <--append to LL of nodes--> */
 void
-astNodeLLAppend(ASTNodeLL* list, ASTNode* node)
+astNodeLLAppend(ASTNode* list, ASTNode* node)
 {
   if (list == NULL)
     return;
-  ASTNodeLL* it = list;
+  ASTNodeLL* it = list->data.nodeList.list;
   while (it->next != NULL) {
     it = it->next;
   }
@@ -932,12 +933,13 @@ printAST(ASTNode* node, int indent)
       printf(" name='%s' modifier=0x%x\n",
              node->data.varDecl.name,
              node->data.varDecl.modifier);
-      printAST(node->data.varDecl.type, indent + 2);
+      // TODO: node of variable type, currently unused
+      // printAST(node->data.varDecl.type, indent + 2);
       printAST(node->data.varDecl.expr, indent + 2);
       break;
 
     case NODE_VAR_ASSIGN:
-      printf(" op=%s\n", op2String(node->data.varAssign.op));
+      printf(" op='%s'\n", op2String(node->data.varAssign.op));
       printAST(node->data.varAssign.lhs, indent + 2);
       printAST(node->data.varAssign.rhs, indent + 2);
       break;
@@ -999,13 +1001,13 @@ printAST(ASTNode* node, int indent)
       break;
 
     case NODE_BINARYOP:
-      printf(" op=%s\n", op2String(node->data.binaryOp.op));
+      printf(" op='%s'\n", op2String(node->data.binaryOp.op));
       printAST(node->data.binaryOp.lhs, indent + 2);
       printAST(node->data.binaryOp.rhs, indent + 2);
       break;
 
     case NODE_UNARYOP:
-      printf(" op=%s\n", op2String(node->data.unaryOp.op));
+      printf(" op='%s'\n", op2String(node->data.unaryOp.op));
       printAST(node->data.unaryOp.expr, indent + 2);
       break;
 

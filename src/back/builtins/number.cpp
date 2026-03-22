@@ -110,33 +110,32 @@ numberBinaryOp(Runtime& runtime, const std::vector<ObjectHeader>& args)
 //   double opVal = args.at(0).data.numValue;
 //   OpType op = runtime.doubleToOpType(opVal);
 //   double a = args.at(1).data.numValue;
-//   Identifier id = { NameType::None };
 
 //   switch (op) {
 //     case OP_UNARY_INC: {
-//       id = runtime.args->at(1);
-//       ++obj->data.numValue;
+//       ++a;
 //       break;
 //     }
 //     case OP_UNARY_DEC: {
-//       id = runtime.args->at(1);
-//       --obj->data.numValue;
+//       --a;
 //       break;
 //     }
 //     case OP_UNARY_NEG: {
-//       id = runtime.boolObj(~static_cast<int64_t>(a));
+//       a = ~static_cast<uint64_t>(a);
 //       break;
 //     }
 //     case OP_UNARY_ARITHM_NEG: {
-//       id = runtime.numberObj(-a);
+//       a = -a;
 //       break;
 //     }
 //     default: {
 //       // if operator passed to function is not a binary op defined for number
 //       runtime.error("numberUnaryOp: Wrong operator\n");
+//       return {};
 //     }
 //   }
 
+//   runtime.tryAssign(args., Identifier value)
 //   contextSetLastEval({ NameType::Object, nullptr, obj });
 // }
 

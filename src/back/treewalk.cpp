@@ -111,8 +111,10 @@ Treewalk::evalEnumDef(const ASTNode* enumDef)
     if (rhs) {
       id = evalNode(rhs);
       auto obj = std::get_if<ObjectHeader>(&id.name);
-      if (!obj || obj->valueType != ValueType::Number)
+      if (!obj || obj->valueType != ValueType::Number) {
         _runtime.error("evalEnumDef: Enumerator value must be Number type\n");
+        return {};
+      }
     } else {
       id = _runtime.numberObj((double)prev);
     }
@@ -167,8 +169,10 @@ Treewalk::evalFnCall(const ASTNode* fnCall)
   while (it) {
     Identifier id = evalNode(it->node);
     auto obj = std::get_if<ObjectHeader>(&id.name);
-    if (!obj)
-      _runtime.error("evalFnCall: argument is not an object");
+    if (!obj) {
+      _runtime.error("evalFnCall: argument is not an object\n");
+      return {};
+    }
 
     args.push_back(*obj);
     it = it->next;
@@ -335,21 +339,26 @@ Treewalk::evalVarAssign(const ASTNode* varAssign)
     case OP_ASSIGN_OR: {
       OpType binaryOp =
         static_cast<OpType>(to_underlying(op) - to_underlying(OP_ASSIGN));
+
+      // TODO: make this work with builtins
+      const char* mthdName = op2String(binaryOp);
+      if (_runtime.isPrimitive(lhsObj->objClass))
+        mthdName = "binary";
+
       Identifier opNameID_ =
-        _runtime.lookupInClass(op2String(binaryOp), { 0, lhsObj->objClass });
+        _runtime.lookupInClass(mthdName, { 0, lhsObj->objClass });
       auto opNameID = std::get_if<FnNameID>(&opNameID_.name);
       if (!opNameID) {
         _runtime.error("evalVarAssign: No defined operator overload lhs\n");
         return {};
       }
-      // TODO: make this work with builtins
 
       rhs = _runtime.call(*opNameID, { *rhsObj }, lhs);
       break;
     }
     default: {
       _runtime.error("evalVarAssign: Wrong assignment operator\n");
-      break;
+      return {};
     }
   }
 
@@ -382,7 +391,7 @@ Treewalk::evalWhl(const ASTNode* loopWhl)
       condition = val.data.numValue != 0;
     } else {
       _runtime.error("evalWhl: Condition cannot be evaluated to Bool type\n");
-      break;
+      return {};
     }
 
     if (!condition)
@@ -438,7 +447,7 @@ Treewalk::evalFor(const ASTNode* loopFor)
         condition = val.data.numValue != 0;
       } else {
         _runtime.error("evalFor: Condition cannot be evaluated to Bool type\n");
-        break;
+        return {};
       }
 
       if (!condition) {
@@ -615,6 +624,8 @@ Treewalk::evalToss(const ASTNode* tossStmt)
       "evalToss: Tossing anything other than strings is not implemented\n");
     return {};
   } else
+    // this error doesnt have to return empty Identifier since we returning
+    // evaluated expression
     _runtime.error("Exception: %s\n", exObj.data.stringValue);
 
   return id;
@@ -763,8 +774,7 @@ Treewalk::evalBinaryOp(const ASTNode* node)
   OpType op = node->data.binaryOp.op;
   std::vector<ObjectHeader> args = { *lhsObj, *rhsObj };
   const char* mthdName = op2String(op);
-  if (_runtime.isPrimitive(lhsObj->objClass) &&
-      _runtime.isPrimitive(lhsObj->objClass))
+  if (_runtime.isPrimitive(lhsObj->objClass))
     mthdName = "binary";
 
   Identifier opNameID_ =
@@ -775,9 +785,8 @@ Treewalk::evalBinaryOp(const ASTNode* node)
     return {};
   }
 
-  // if both object types are primitive then use builtin method
-  if (_runtime.isPrimitive(lhsObj->objClass) &&
-      _runtime.isPrimitive(lhsObj->objClass)) {
+  // if lhs is primitive then use builtin method
+  if (_runtime.isPrimitive(lhsObj->objClass)) {
     Identifier opId = _runtime.numberObj(static_cast<double>(op));
     auto objHdr = std::get<ObjectHeader>(opId.name);
     args.insert(args.begin(), objHdr);
@@ -800,8 +809,7 @@ Treewalk::evalUnaryOp(const ASTNode* node)
   OpType op = node->data.unaryOp.op;
   std::vector<ObjectHeader> args;
   const char* mthdName = op2String(op);
-  if (_runtime.isPrimitive(lhsObj->objClass) &&
-      _runtime.isPrimitive(lhsObj->objClass))
+  if (_runtime.isPrimitive(lhsObj->objClass))
     mthdName = "unary";
 
   Identifier opNameID_ =

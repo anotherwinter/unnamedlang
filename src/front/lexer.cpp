@@ -129,7 +129,6 @@ Lexer::lexer()
     }
     case '}': {
       tok.type = TokenType::RBRACE;
-
       break;
     }
     case '=': {
