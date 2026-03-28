@@ -353,7 +353,17 @@ Treewalk::evalVarAssign(const ASTNode* varAssign)
         return {};
       }
 
-      rhs = _runtime.call(*opNameID, { *rhsObj }, lhs);
+      std::vector<ObjectHeader> args = { *rhsObj };
+
+      // TODO: remove this and fix builtins calling
+      if (_runtime.isPrimitive(lhsObj->objClass)) {
+        args.insert(args.begin(), *lhsObj);
+        ObjectHeader opObj = std::get<ObjectHeader>(
+          _runtime.numberObj(static_cast<double>(binaryOp)).name);
+        args.insert(args.begin(), opObj);
+      }
+
+      rhs = _runtime.call(*opNameID, args, lhs);
       break;
     }
     default: {
