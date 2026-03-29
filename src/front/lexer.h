@@ -45,11 +45,12 @@ public:
   Token lexer();
   static const char* errorMsg(LexerError code);
 
-#ifdef LEXER_DBG
-  const char* lexerTokenName(TokenType type);
-#endif
+  const char* lexerTypeName(TokenType type);
 
 private:
+  Lexer(const Lexer& other) = delete;
+  Lexer(Lexer&& other) = delete;
+
   std::string _str;
   size_t _line;
   size_t _col;

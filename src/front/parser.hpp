@@ -735,7 +735,7 @@ namespace yy {
     static const short yypgoto_[];
 
     // YYDEFGOTO[NTERM-NUM].
-    static const unsigned char yydefgoto_[];
+    static const short yydefgoto_[];
 
     // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
     // positive, shift that token.  If negative, reduce the rule whose
@@ -984,7 +984,7 @@ namespace yy {
     /// Constants.
     enum
     {
-      yylast_ = 461,     ///< Last index in yytable_.
+      yylast_ = 462,     ///< Last index in yytable_.
       yynnts_ = 86,  ///< Number of nonterminal symbols.
       yyfinal_ = 86 ///< Termination state number.
     };

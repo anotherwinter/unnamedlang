@@ -1,14 +1,14 @@
 #pragma once
-#include "bumparena.h"
+#include "bump.h"
 #include <cstddef>
 #include <map>
 #include <vector>
 
-class BuddyArena
+class BuddyAlloc
 {
 public:
-  BuddyArena(size_t cap);
-  ~BuddyArena();
+  BuddyAlloc(size_t cap);
+  ~BuddyAlloc();
   void* alloc(size_t n);
   void release(void* ptr);
 

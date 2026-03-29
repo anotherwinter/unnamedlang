@@ -807,11 +807,11 @@ ASTNode* astRoot = NULL;
     lvl_unary_neg
         : op_unary_neg lvl_unary_inc %prec UMINUS
             {
-                $$ = newUnaryOp($1, $2);
+                $$ = newUnaryPre($1, $2);
             }
         | op_unary_logic_neg lvl_unary_inc
             {
-                $$ = newUnaryOp($1, $2);
+                $$ = newUnaryPre($1, $2);
             }
         | lvl_unary_inc
             {
@@ -822,7 +822,7 @@ ASTNode* astRoot = NULL;
     lvl_unary_inc
         : op_unary_inc lvl_postfix
             {
-                $$ = newUnaryOp($1, $2);
+                $$ = newUnaryPre($1, $2);
             }
         | lvl_postfix
             {
@@ -842,6 +842,10 @@ ASTNode* astRoot = NULL;
         | lvl_postfix LSQUARE opt_expr RSQUARE
             {   
                 $$ = newArrayAccess($1, $3);   
+            }
+        | lvl_postfix op_unary_inc
+            {   
+                $$ = newUnaryPost($2, $1); 
             }
         | primary
             {   

@@ -6,7 +6,7 @@
 #include <map>
 #include <vector>
 
-BuddyArena::BuddyArena(size_t cap)
+BuddyAlloc::BuddyAlloc(size_t cap)
 {
   // adjust capacity parameter to be power of 2
   size_t size = ceil(log2(cap));
@@ -22,7 +22,7 @@ BuddyArena::BuddyArena(size_t cap)
   freeList->at(size).push_back(ptr);
 }
 
-BuddyArena::~BuddyArena()
+BuddyAlloc::~BuddyAlloc()
 {
   free(_begin);
 
@@ -31,7 +31,7 @@ BuddyArena::~BuddyArena()
 }
 
 void*
-BuddyArena::alloc(size_t n)
+BuddyAlloc::alloc(size_t n)
 {
   size_t size = ceil(log2(n));
   size_t current = size;
@@ -80,7 +80,7 @@ BuddyArena::alloc(size_t n)
 }
 
 void
-BuddyArena::release(void* ptr)
+BuddyAlloc::release(void* ptr)
 {
   auto it = busyList->find((char*)ptr);
   if (it == busyList->end()) {
@@ -120,7 +120,7 @@ BuddyArena::release(void* ptr)
 
 #ifdef DBG
 size_t
-buddyGetOffset(BuddyArena* a, void* ptr)
+buddyGetOffset(BuddyAlloc* a, void* ptr)
 {
   return (size_t)ptr - (size_t)begin;
 }

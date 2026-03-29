@@ -1,21 +1,21 @@
-#include "bumparena.h"
+#include "bump.h"
 #include <cstdio>
 #include <cstdlib>
 
-BumpArena::BumpArena(size_t cap)
+BumpAlloc::BumpAlloc(size_t cap)
 {
   _begin = (char*)malloc(cap);
   _offset = 0;
   _cap = cap;
 }
 
-BumpArena::~BumpArena()
+BumpAlloc::~BumpAlloc()
 {
   free(_begin);
 }
 
 void*
-BumpArena::alloc(size_t n, size_t align)
+BumpAlloc::alloc(size_t n, size_t align)
 {
   if (align > alignof(std::max_align_t)) {
     fprintf(stderr, "bumpAlloc: unsupported alignment of %zu\n", align);
@@ -45,14 +45,14 @@ BumpArena::alloc(size_t n, size_t align)
 }
 
 void
-BumpArena::reset()
+BumpAlloc::reset()
 {
   _offset = 0;
 }
 
 #ifdef DBG
 size_t
-BumpArena::getOffset(void* ptr)
+BumpAlloc::getOffset(void* ptr)
 {
   return (char*)ptr - _begin;
 }

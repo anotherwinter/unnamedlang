@@ -1,16 +1,16 @@
 #pragma once
 #include <cstddef>
 
-class BumpArena
+class BumpAlloc
 {
 public:
-  BumpArena(size_t cap);
-  ~BumpArena();
-  void* alloc(size_t n, size_t align);
+  BumpAlloc(size_t cap);
+  ~BumpAlloc();
+  void* alloc(size_t n, size_t align = 8);
   void reset();
 
 #ifdef DBG
-  size_t getOffset(BumpArena* a, void* ptr);
+  size_t getOffset(BumpAlloc* a, void* ptr);
 #endif
 
 private:

@@ -239,12 +239,18 @@ Lexer::lexer()
 
       // if its underscore or a-Z char, tokenize keyword/name
       if (c == '_' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+        const char* before = ptr() - 1;
         bool isKeyword = lexerKeyword(tok.type);
         // if its not a keyword then assume its a name
         if (!isKeyword) {
           tok.str = lexerName();
           tok.type = TokenType::NAME;
         }
+#ifdef DBG
+        else {
+          tok.str = strndup(before, ptr() - before);
+        }
+#endif
       } else {
         error(LexerError::UnknownToken);
       }
@@ -267,14 +273,14 @@ Lexer::errorMsg(LexerError code)
   return "lexer error";
 }
 
-#ifdef DBG
 const char*
-lexerTokenName(TokenType type)
+Lexer::lexerTypeName(TokenType type)
 {
+#ifndef DBG
+  return "no debug";
+#endif
+
   switch (type) {
-    case TokenType::INVALID: {
-      return "invalid";
-    }
     case TokenType::PLUS: {
       return "+";
     }
@@ -386,9 +392,9 @@ lexerTokenName(TokenType type)
     case TokenType::COMMA: {
       return ",";
     }
-    case TokenType::HASH: {
-      return "#";
-    }
+    // case TokenType::HASH: {
+    //   return "#";
+    // }
     case TokenType::STRING: {
       return "string";
     }
@@ -423,8 +429,6 @@ lexerTokenName(TokenType type)
       return "keyword";
   }
 }
-
-#endif
 
 void
 Lexer::recover()

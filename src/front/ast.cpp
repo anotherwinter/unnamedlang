@@ -54,8 +54,7 @@ tokType2OpType(TokenType tokType, bool unary)
 const char*
 op2String(OpType opType)
 {
-  // substract 1 since enum values are 1-based
-  return _opTypeStr[to_underlying(opType) - 1];
+  return _opTypeStr[to_underlying(opType)];
 }
 
 ASTNode*
@@ -221,7 +220,8 @@ duplicateNode(ASTNode* node)
       copy->data.binaryOp.rhs = duplicateNode(node->data.binaryOp.rhs);
       break;
     }
-    case NODE_UNARYOP: {
+    case NODE_UNARYPRE:
+    case NODE_UNARYPOST: {
       copy->data.unaryOp.op = node->data.unaryOp.op;
       copy->data.unaryOp.expr = duplicateNode(node->data.unaryOp.expr);
       break;
@@ -423,7 +423,8 @@ freeNode(ASTNode* node)
       freeNode(node->data.binaryOp.rhs);
       break;
     }
-    case NODE_UNARYOP: {
+    case NODE_UNARYPRE:
+    case NODE_UNARYPOST: {
       freeNode(node->data.unaryOp.expr);
       break;
     }
@@ -744,11 +745,22 @@ newBinaryOp(TokenType op, ASTNode* lhs, ASTNode* rhs)
   return n;
 }
 
-/* <--unary op--> */
+/* <--unary prefix--> */
 ASTNode*
-newUnaryOp(TokenType op, ASTNode* expr)
+newUnaryPre(TokenType op, ASTNode* expr)
 {
-  ASTNode* n = allocNode(NODE_UNARYOP);
+  ASTNode* n = allocNode(NODE_UNARYPRE);
+  n->data.unaryOp.op = tokType2OpType(op, true);
+  n->data.unaryOp.expr = expr;
+
+  return n;
+}
+
+/* <--unary postfix--> */
+ASTNode*
+newUnaryPost(TokenType op, ASTNode* expr)
+{
+  ASTNode* n = allocNode(NODE_UNARYPOST);
   n->data.unaryOp.op = tokType2OpType(op, true);
   n->data.unaryOp.expr = expr;
 
@@ -1006,8 +1018,13 @@ printAST(ASTNode* node, int indent)
       printAST(node->data.binaryOp.rhs, indent + 2);
       break;
 
-    case NODE_UNARYOP:
-      printf(" op='%s'\n", op2String(node->data.unaryOp.op));
+    case NODE_UNARYPRE:
+      printf(" prefix op='%s'\n", op2String(node->data.unaryOp.op));
+      printAST(node->data.unaryOp.expr, indent + 2);
+      break;
+
+    case NODE_UNARYPOST:
+      printf(" postfix op='%s'\n", op2String(node->data.unaryOp.op));
       printAST(node->data.unaryOp.expr, indent + 2);
       break;
 

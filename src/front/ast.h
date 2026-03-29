@@ -296,6 +296,9 @@ typedef struct ASTNode
       ASTNode* code;
     } lambda;
   } data;
+
+  size_t line;
+  size_t col;
 } ASTNode;
 
 const char*
@@ -389,7 +392,10 @@ ASTNode*
 newBinaryOp(TokenType op, ASTNode* lhs, ASTNode* rhs);
 
 ASTNode*
-newUnaryOp(TokenType op, ASTNode* expr);
+newUnaryPre(TokenType op, ASTNode* expr);
+
+ASTNode*
+newUnaryPost(TokenType op, ASTNode* expr);
 
 ASTNode*
 newMemberAccess(ASTNode* left, ASTNode* right);

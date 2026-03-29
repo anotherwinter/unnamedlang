@@ -1,22 +1,20 @@
 #pragma once
-#include "back/runtime.h"
-#include "back/treewalk.h"
 #include "diagnostics.h"
 #include "front/lexer.h"
+#include "front/parser.hpp"
 
 class Initializer
 {
 public:
   Initializer();
 
-  inline Lexer& getLexer() { return _lex; }
   inline Diagnostics& getDiag() { return _diag; }
-  inline Runtime& getRuntime() { return _runtime; }
-  inline Treewalk& getTreewalk() { return _treewalk; }
+  inline Lexer& getLexer() { return _lex; }
+  inline yy::parser& getParser() { return _parser; }
 
 private:
   Diagnostics _diag;
   Lexer _lex;
-  Runtime _runtime;
-  Treewalk _treewalk;
+  yy::parser _parser;
+  ParserContext _parserCtx = {};
 };
