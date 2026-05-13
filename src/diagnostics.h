@@ -25,20 +25,37 @@ static_assert(sizeof(DiagID) == 4, "DiagID must be 4 bytes");
 constexpr DiagID InvalidDiagID = std::numeric_limits<DiagID>::max();
 constexpr size_t MessagesLimit = 100;
 
+inline bool
+isValid(DiagID id)
+{
+  return id != InvalidDiagID;
+}
+
 class Diagnostics
 {
 public:
-  struct DiagnosticsKey {
-    private:
-      friend class Initializer;
-      DiagnosticsKey() = default;
+  struct DiagnosticsKey
+  {
+  private:
+    friend class Initializer;
+    DiagnosticsKey() = default;
   };
 
   Diagnostics(DiagnosticsKey);
   inline size_t getSupressedCount() const { return _supressedMsgs; }
   inline size_t getMsgCount() const { return _msgs.size(); }
   inline bool hasErrors() const { return _hasErrors; }
-  DiagID putMsg(ErrorCode code, DiagSeverity sev, size_t line, size_t col);
+  DiagID getLastMsgID() const
+  {
+    if (_msgs.empty())
+      return InvalidDiagID;
+
+    return _lastMsgID;
+  }
+  DiagID putMsg(ErrorCode code,
+                size_t line,
+                size_t col,
+                DiagSeverity sev = DiagSeverity::ERROR);
   const DiagMessage* getDiag(DiagID id) const;
   const char* getErrorMsg(ErrorCode code) const;
   std::string getDiagStr(DiagID id) const;
@@ -49,9 +66,9 @@ public:
 private:
   Diagnostics(const Diagnostics& other) = delete;
   Diagnostics(Diagnostics&& other) = delete;
-  DiagID _lastMsgID;
-  size_t _msgLimit;
+  DiagID _lastMsgID = 0;
+  size_t _msgLimit = MessagesLimit;
+  size_t _supressedMsgs = 0;
+  bool _hasErrors = false;
   std::vector<DiagMessage> _msgs;
-  size_t _supressedMsgs;
-  bool _hasErrors;
 };

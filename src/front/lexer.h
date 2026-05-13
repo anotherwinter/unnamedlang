@@ -22,10 +22,10 @@ enum class TokenType : uint16_t
 
 typedef struct
 {
-  const char* str;
-  TokenType type;
-  size_t line;
-  size_t col;
+  const char* str = nullptr;
+  TokenType type = TokenType::ERROR;
+  size_t line = 0;
+  size_t col = 0;
 } Token;
 
 // TODO: implement error messaging and tie to diag
@@ -41,8 +41,14 @@ class Lexer
 {
 public:
   Lexer(Diagnostics& diag);
+
+  // get last recognized token
+  inline Token& getLastToken() { return _lastTok; }
+
   void load(const std::string& str);
+
   Token lexer();
+
   static const char* errorMsg(LexerError code);
 
   const char* lexerTypeName(TokenType type);
@@ -58,6 +64,7 @@ private:
   const char* _end;
   bool _error;
   bool _eof;
+  Token _lastTok;
   std::unordered_map<std::string, TokenType> _keywords;
   std::set<size_t> _keywordsLengths;
   Diagnostics& _diag;
@@ -67,8 +74,10 @@ private:
   inline void skipSpaces()
   {
     // ignore spaces and tabs
-    while (match(' ') || match('\t'))
+    while (match(' ') || match('\t')) {
+      ++_col;
       ++_ptr;
+    }
   }
 
   inline void advance()

@@ -76,7 +76,7 @@ typedef struct ASTNode
     {
       // function name
       const char* name;
-      ASTNodeLL* params;
+      ASTNode* params;
       // pointer to function code block
       ASTNode* code;
     } fnDef;
@@ -86,7 +86,7 @@ typedef struct ASTNode
     {
       // name of function which is being called
       ASTNode* callee;
-      ASTNodeLL* arguments;
+      ASTNode* arguments;
     } fnCall;
 
     // <---NODE_CLASS_DEF-->
@@ -94,7 +94,7 @@ typedef struct ASTNode
     {
       // name of class
       const char* name;
-      ASTNodeLL* members;
+      ASTNode* members;
     } classDef;
 
     // <---NODE_CLASSMETHOD_DEF-->
@@ -123,7 +123,7 @@ typedef struct ASTNode
     {
       // enumeration name
       const char* name;
-      ASTNodeLL* elements;
+      ASTNode* elements;
     } enumDef;
 
     // <--NODE_ENUM_ELEMENT-->
@@ -182,11 +182,11 @@ typedef struct ASTNode
     struct
     {
       // list of assignments to do before loop starts
-      ASTNodeLL* assigns;
+      ASTNode* assigns;
       // condition under which to execute iterations
-      ASTNodeLL* condition;
+      ASTNode* condition;
       // list of assignments to do after each iteration
-      ASTNodeLL* postIterationAssigns;
+      ASTNode* postIterationAssigns;
       // code to execute
       ASTNode* code;
     } loopFor;
@@ -208,7 +208,7 @@ typedef struct ASTNode
       // expression to evaluate and compare against cases
       ASTNode* expr;
       // cases to go into if expression evaluates to them
-      ASTNodeLL* cases;
+      ASTNode* cases;
     } switchStmt;
 
     // <---NODE_SWITCH_CASE-->
@@ -285,14 +285,14 @@ typedef struct ASTNode
     // <---NODE_ARRAY-->
     struct
     {
-      ASTNodeLL* elements;
+      ASTNode* elements;
     } array;
 
     // <---NODE_LAMBDA-->
     struct
     {
-      ASTNodeLL* captureList;
-      ASTNodeLL* params;
+      ASTNode* captureList;
+      ASTNode* params;
       ASTNode* code;
     } lambda;
   } data;
@@ -300,6 +300,19 @@ typedef struct ASTNode
   size_t line;
   size_t col;
 } ASTNode;
+
+inline ASTNodeLL*
+nodeList(const ASTNode* node)
+{
+  if (node == nullptr)
+    return nullptr;
+
+  return node->data.nodeList.list;
+}
+
+// TODO: remove this
+void
+setLexer(Lexer* lex);
 
 const char*
 op2String(OpType opType);

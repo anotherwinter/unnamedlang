@@ -3,16 +3,12 @@
 #include "front/lexer.h"
 
 Diagnostics::Diagnostics(DiagnosticsKey)
-  : _lastMsgID(0)
-  , _msgLimit(MessagesLimit)
-  , _supressedMsgs(0)
-  , _hasErrors(false)
 {
   _msgs.reserve(_msgLimit);
 }
 
 DiagID
-Diagnostics::putMsg(ErrorCode code, DiagSeverity sev, size_t line, size_t col)
+Diagnostics::putMsg(ErrorCode code, size_t line, size_t col, DiagSeverity sev)
 {
   if (_msgs.size() == _msgLimit)
     return InvalidDiagID;
@@ -36,6 +32,8 @@ Diagnostics::getDiag(DiagID id) const
 const char*
 Diagnostics::getErrorMsg(ErrorCode code) const
 {
+  return "Stub error";
+
   if (code < PARS_ERR_BASE)
     return Lexer::errorMsg(static_cast<LexerError>(code));
 

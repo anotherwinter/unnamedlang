@@ -22,6 +22,8 @@ static constexpr std::array<const char*, static_cast<size_t>(OpType::_COUNT)>
 #undef X
   };
 
+static Lexer* _lex = nullptr;
+
 // TODO: remove this
 void
 yyerror(const char* str)
@@ -51,6 +53,12 @@ tokType2OpType(TokenType tokType, bool unary)
   }
 }
 
+void
+setLexer(Lexer* lex)
+{
+  _lex = lex;
+}
+
 const char*
 op2String(OpType opType)
 {
@@ -66,6 +74,8 @@ allocNode(ASTNodeType type)
     exit(EXIT_FAILURE);
   }
 
+  node->line = _lex->getLastToken().line;
+  node->col = _lex->getLastToken().col;
   node->type = type;
   memset(&node->data, 0, sizeof(node->data));
   return node;
@@ -97,10 +107,12 @@ duplicateNode(ASTNode* node)
     return NULL;
 
   ASTNode* copy = allocNode(node->type);
+  copy->line = node->line;
+  copy->col = node->col;
 
   switch (node->type) {
     case NODE_LIST: {
-      copy->data.nodeList.list = cloneASTNodeLL(node->data.nodeList.list);
+      copy->data.nodeList.list = cloneASTNodeLL(nodeList(node));
       break;
     }
     case NODE_PARAM_INFO: {
@@ -110,18 +122,18 @@ duplicateNode(ASTNode* node)
     }
     case NODE_FN_DEF: {
       copy->data.fnDef.name = strdup(node->data.fnDef.name);
-      copy->data.fnDef.params = cloneASTNodeLL(node->data.fnDef.params);
+      copy->data.fnDef.params = duplicateNode(node->data.fnDef.params);
       copy->data.fnDef.code = duplicateNode(node->data.fnDef.code);
       break;
     }
     case NODE_FN_CALL: {
       copy->data.fnCall.callee = duplicateNode(node->data.fnCall.callee);
-      copy->data.fnCall.arguments = cloneASTNodeLL(node->data.fnCall.arguments);
+      copy->data.fnCall.arguments = duplicateNode(node->data.fnCall.arguments);
       break;
     }
     case NODE_CLASS_DEF: {
       copy->data.classDef.name = strdup(node->data.classDef.name);
-      copy->data.classDef.members = cloneASTNodeLL(node->data.classDef.members);
+      copy->data.classDef.members = duplicateNode(node->data.classDef.members);
       break;
     }
     case NODE_CLASSMETHOD_DEF: {
@@ -139,7 +151,7 @@ duplicateNode(ASTNode* node)
     }
     case NODE_ENUM_DEF: {
       copy->data.enumDef.name = strdup(node->data.enumDef.name);
-      copy->data.enumDef.elements = cloneASTNodeLL(node->data.enumDef.elements);
+      copy->data.enumDef.elements = duplicateNode(node->data.enumDef.elements);
       break;
     }
     case NODE_ENUM_ELEMENT: {
@@ -175,11 +187,11 @@ duplicateNode(ASTNode* node)
       break;
     }
     case NODE_FOR: {
-      copy->data.loopFor.assigns = cloneASTNodeLL(node->data.loopFor.assigns);
+      copy->data.loopFor.assigns = duplicateNode(node->data.loopFor.assigns);
       copy->data.loopFor.condition =
-        cloneASTNodeLL(node->data.loopFor.condition);
+        duplicateNode(node->data.loopFor.condition);
       copy->data.loopFor.postIterationAssigns =
-        cloneASTNodeLL(node->data.loopFor.postIterationAssigns);
+        duplicateNode(node->data.loopFor.postIterationAssigns);
       copy->data.loopFor.code = duplicateNode(node->data.loopFor.code);
       break;
     }
@@ -193,7 +205,7 @@ duplicateNode(ASTNode* node)
     }
     case NODE_SWITCH: {
       copy->data.switchStmt.expr = duplicateNode(node->data.switchStmt.expr);
-      copy->data.switchStmt.cases = cloneASTNodeLL(node->data.switchStmt.cases);
+      copy->data.switchStmt.cases = duplicateNode(node->data.switchStmt.cases);
       break;
     }
     case NODE_SWITCH_CASE: {
@@ -249,7 +261,7 @@ duplicateNode(ASTNode* node)
       copy->data.stringValue = strdup(node->data.stringValue);
       break;
     case NODE_ARRAY: {
-      copy->data.array.elements = cloneASTNodeLL(node->data.array.elements);
+      copy->data.array.elements = duplicateNode(node->data.array.elements);
       break;
     }
     case NODE_NAME:
@@ -257,8 +269,8 @@ duplicateNode(ASTNode* node)
       break;
     case NODE_LAMBDA: {
       copy->data.lambda.captureList =
-        cloneASTNodeLL(node->data.lambda.captureList);
-      copy->data.lambda.params = cloneASTNodeLL(node->data.lambda.params);
+        duplicateNode(node->data.lambda.captureList);
+      copy->data.lambda.params = duplicateNode(node->data.lambda.params);
       copy->data.lambda.code = duplicateNode(node->data.lambda.code);
       break;
     }
@@ -327,18 +339,18 @@ freeNode(ASTNode* node)
     }
     case NODE_FN_DEF: {
       free((void*)node->data.fnDef.name);
-      freeASTNodeLL(node->data.fnDef.params);
+      freeNode(node->data.fnDef.params);
       freeNode(node->data.fnDef.code);
       break;
     }
     case NODE_FN_CALL: {
       freeNode(node->data.fnCall.callee);
-      freeASTNodeLL(node->data.fnCall.arguments);
+      freeNode(node->data.fnCall.arguments);
       break;
     }
     case NODE_CLASS_DEF: {
       free((void*)node->data.classDef.name);
-      freeASTNodeLL(node->data.classDef.members);
+      freeNode(node->data.classDef.members);
       break;
     }
     case NODE_CLASSMETHOD_DEF: {
@@ -352,7 +364,7 @@ freeNode(ASTNode* node)
     }
     case NODE_ENUM_DEF: {
       free((void*)node->data.enumDef.name);
-      freeASTNodeLL(node->data.enumDef.elements);
+      freeNode(node->data.enumDef.elements);
       break;
     }
     case NODE_ENUM_ELEMENT: {
@@ -384,9 +396,9 @@ freeNode(ASTNode* node)
       break;
     }
     case NODE_FOR: {
-      freeASTNodeLL(node->data.loopFor.assigns);
-      freeASTNodeLL(node->data.loopFor.condition);
-      freeASTNodeLL(node->data.loopFor.postIterationAssigns);
+      freeNode(node->data.loopFor.assigns);
+      freeNode(node->data.loopFor.condition);
+      freeNode(node->data.loopFor.postIterationAssigns);
       freeNode(node->data.loopFor.code);
       break;
     }
@@ -398,7 +410,7 @@ freeNode(ASTNode* node)
     }
     case NODE_SWITCH: {
       freeNode(node->data.switchStmt.expr);
-      freeASTNodeLL(node->data.switchStmt.cases);
+      freeNode(node->data.switchStmt.cases);
       break;
     }
     case NODE_SWITCH_CASE: {
@@ -446,7 +458,7 @@ freeNode(ASTNode* node)
       break;
     }
     case NODE_ARRAY: {
-      freeASTNodeLL(node->data.array.elements);
+      freeNode(node->data.array.elements);
       break;
     }
     case NODE_NAME: {
@@ -454,8 +466,8 @@ freeNode(ASTNode* node)
       break;
     }
     case NODE_LAMBDA: {
-      freeASTNodeLL(node->data.lambda.captureList);
-      freeASTNodeLL(node->data.lambda.params);
+      freeNode(node->data.lambda.captureList);
+      freeNode(node->data.lambda.params);
       freeNode(node->data.lambda.code);
       break;
     }
@@ -492,7 +504,7 @@ newFnDef(const char* name, ASTNode* params, ASTNode* code)
   ASTNode* n = allocNode(NODE_FN_DEF);
   n->data.fnDef.name = strdup(name);
   if (params)
-    n->data.fnDef.params = params->data.nodeList.list;
+    n->data.fnDef.params = params;
 
   n->data.fnDef.code = code;
 
@@ -505,7 +517,7 @@ newFnCall(ASTNode* callee, ASTNode* arguments)
 {
   ASTNode* n = allocNode(NODE_FN_CALL);
   if (arguments)
-    n->data.fnCall.arguments = arguments->data.nodeList.list;
+    n->data.fnCall.arguments = arguments;
 
   n->data.fnCall.callee = callee;
 
@@ -518,7 +530,7 @@ newClassDef(const char* name, ASTNode* members)
 {
   ASTNode* n = allocNode(NODE_CLASS_DEF);
   if (members)
-    n->data.classDef.members = members->data.nodeList.list;
+    n->data.classDef.members = members;
 
   n->data.classDef.name = strdup(name);
 
@@ -555,7 +567,7 @@ newEnumDef(const char* name, ASTNode* elements)
   ASTNode* n = allocNode(NODE_ENUM_DEF);
   n->data.enumDef.name = strdup(name);
   if (elements)
-    n->data.enumDef.elements = elements->data.nodeList.list;
+    n->data.enumDef.elements = elements;
 
   return n;
 }
@@ -655,13 +667,12 @@ newLoopFor(ASTNode* assigns,
 {
   ASTNode* n = allocNode(NODE_FOR);
   if (assigns)
-    n->data.loopFor.assigns = assigns->data.nodeList.list;
+    n->data.loopFor.assigns = assigns;
 
   if (postIterationAssigns)
-    n->data.loopFor.postIterationAssigns =
-      postIterationAssigns->data.nodeList.list;
+    n->data.loopFor.postIterationAssigns = postIterationAssigns;
 
-  n->data.loopFor.condition = condition->data.nodeList.list;
+  n->data.loopFor.condition = condition;
   n->data.loopFor.code = code;
 
   return n;
@@ -686,7 +697,7 @@ newSwitchStmt(ASTNode* expr, ASTNode* cases)
   ASTNode* n = allocNode(NODE_SWITCH);
   n->data.switchStmt.expr = expr;
   if (cases)
-    n->data.switchStmt.cases = cases->data.nodeList.list;
+    n->data.switchStmt.cases = cases;
 
   return n;
 }
@@ -825,7 +836,7 @@ newArray(ASTNode* elements)
 {
   ASTNode* n = allocNode(NODE_ARRAY);
   if (elements)
-    n->data.array.elements = elements->data.nodeList.list;
+    n->data.array.elements = elements;
 
   return n;
 }
@@ -845,9 +856,9 @@ ASTNode*
 newLambda(ASTNode* captureList, ASTNode* params, ASTNode* code)
 {
   ASTNode* n = allocNode(NODE_LAMBDA);
-  n->data.lambda.captureList = captureList->data.nodeList.list;
+  n->data.lambda.captureList = captureList;
   if (params)
-    n->data.fnDef.params = params->data.nodeList.list;
+    n->data.fnDef.params = params;
 
   n->data.lambda.code = code;
 
@@ -900,19 +911,19 @@ printAST(ASTNode* node, int indent)
 
     case NODE_FN_DEF:
       printf(" name='%s'\n", node->data.fnDef.name);
-      printNodeList(node->data.fnDef.params, indent + 2);
+      printAST(node->data.fnDef.params, indent + 2);
       printAST(node->data.fnDef.code, indent + 2);
       break;
 
     case NODE_FN_CALL:
       printf("\n");
       printAST(node->data.fnCall.callee, indent + 2);
-      printNodeList(node->data.fnCall.arguments, indent + 2);
+      printAST(node->data.fnCall.arguments, indent + 2);
       break;
 
     case NODE_CLASS_DEF:
       printf(" name='%s'\n", node->data.classDef.name);
-      printNodeList(node->data.classDef.members, indent + 2);
+      printAST(node->data.classDef.members, indent + 2);
       break;
 
     case NODE_CLASSMETHOD_DEF:
@@ -929,7 +940,7 @@ printAST(ASTNode* node, int indent)
 
     case NODE_ENUM_DEF:
       printf(" name='%s'\n", node->data.enumDef.name);
-      printNodeList(node->data.enumDef.elements, indent + 2);
+      printAST(node->data.enumDef.elements, indent + 2);
       break;
 
     case NODE_ENUM_ELEMENT:
@@ -969,9 +980,9 @@ printAST(ASTNode* node, int indent)
 
     case NODE_FOR:
       printf("\n");
-      printNodeList(node->data.loopFor.assigns, indent + 2);
-      printNodeList(node->data.loopFor.condition, indent + 2);
-      printNodeList(node->data.loopFor.postIterationAssigns, indent + 2);
+      printAST(node->data.loopFor.assigns, indent + 2);
+      printAST(node->data.loopFor.condition, indent + 2);
+      printAST(node->data.loopFor.postIterationAssigns, indent + 2);
       printAST(node->data.loopFor.code, indent + 2);
       break;
 
@@ -986,7 +997,7 @@ printAST(ASTNode* node, int indent)
     case NODE_SWITCH:
       printf("\n");
       printAST(node->data.switchStmt.expr, indent + 2);
-      printNodeList(node->data.switchStmt.cases, indent + 2);
+      printAST(node->data.switchStmt.cases, indent + 2);
       break;
 
     case NODE_SWITCH_CASE:
@@ -1055,13 +1066,13 @@ printAST(ASTNode* node, int indent)
 
     case NODE_ARRAY:
       printf("\n");
-      printNodeList(node->data.array.elements, indent + 2);
+      printAST(node->data.array.elements, indent + 2);
       break;
 
     case NODE_LAMBDA:
       printf("\n");
-      printNodeList(node->data.lambda.captureList, indent + 2);
-      printNodeList(node->data.lambda.params, indent + 2);
+      printAST(node->data.lambda.captureList, indent + 2);
+      printAST(node->data.lambda.params, indent + 2);
       printAST(node->data.lambda.code, indent + 2);
       break;
 

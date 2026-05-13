@@ -45,7 +45,7 @@
 #ifndef YY_YY_PARSER_HPP_INCLUDED
 # define YY_YY_PARSER_HPP_INCLUDED
 // "%code requires" blocks.
-#line 10 "bnf.y"
+#line 15 "bnf.y"
 
 #include "ast.h"
 #include "lexer.h"
@@ -210,7 +210,7 @@ namespace yy {
     /// Symbol semantic values.
     union value_type
     {
-#line 29 "bnf.y"
+#line 34 "bnf.y"
 
     const char* stringValue;   /* STRING, nameNode etc */
     double      numberValue;   /* NUMBER */

@@ -1,24 +1,32 @@
 #include "typedast.h"
-#include "ast.h"
 #include "shared.h"
+#include "symbolregistry.h"
 #include "typedastanalyzer.h"
 #include "typedastbuilder.h"
 #include <cstdio>
+#include <memory>
 #include <variant>
+
+using namespace HIR;
 
 TypedAST::TypedAST(Diagnostics& diag)
   : _diag(diag)
 {
+  _reg = std::make_unique<SymbolRegistry>(_diag);
+  _builder = std::make_unique<TypedASTBuilder>(_diag, *_reg);
+  _analyzer = std::make_unique<TypedASTAnalyzer>(_diag, *_reg);
 }
 
-TypedTree<UnanalyzedTag>
+TypedAST::~TypedAST() {}
+
+TypedTree<Unanalyzed>
 TypedAST::build(const ASTNode* root)
 {
   return _builder->build(root);
 }
 
-TypedTree<AnalyzedTag>
-TypedAST::analyze(TypedTree<UnanalyzedTag> root)
+TypedTree<Analyzed>
+TypedAST::analyze(TypedTree<Unanalyzed> root)
 {
   return _analyzer->analyze(root);
 }
@@ -33,7 +41,8 @@ TypedAST::print(const TypedNode* node, int indent)
   }
 
   int nextIndent = indent + 2;
-  printf("%s", _typedNodesStr[node->node.index()]);
+  auto idx = node->node.index();
+  printf("%s\n", _typedNodesStr[node->node.index()]);
   std::visit(
     Overloaded{
       [&](const std::monostate&) { printf("nothing\n"); },
@@ -46,11 +55,9 @@ TypedAST::print(const TypedNode* node, int indent)
         print(fnDef.body, nextIndent);
       },
       [&](const CallExpr& callExpr) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("callee:\n");
-        print(callExpr.callee);
+        print(callExpr.callee, nextIndent + 2);
 
         printIndent(nextIndent);
         printf("args:\n");
@@ -63,9 +70,7 @@ TypedAST::print(const TypedNode* node, int indent)
         printIndent(nextIndent);
         printf("methods:\n");
         for (auto& m : classDef.methods) {
-          TypedNode n;
-          n.node = m;
-          print(&n, nextIndent + 2);
+          print(m, nextIndent + 2);
         }
 
         printIndent(nextIndent);
@@ -76,16 +81,12 @@ TypedAST::print(const TypedNode* node, int indent)
         }
       },
       [&](const EnumDef& enumDef) {
-        printf("\n");
-
         for (auto& v : enumDef.vals) {
           printIndent(nextIndent);
           printf("%s\n", v.name);
         }
       },
       [&](const VarDecl& varDecl) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("name:\n");
         printIndent(nextIndent + 2);
@@ -95,11 +96,14 @@ TypedAST::print(const TypedNode* node, int indent)
           printIndent(nextIndent);
           printf("value:\n");
           print(varDecl.val, nextIndent + 2);
+
+          printIndent(nextIndent);
+          printf("type:\n");
+          printIndent(nextIndent + 2);
+          printf("%u\n", _analyzer->inferType(varDecl.val).val);
         }
       },
       [&](const VarAssign& varAssign) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("op: %s\n", op2String(static_cast<OpType>(varAssign.op)));
 
@@ -108,12 +112,20 @@ TypedAST::print(const TypedNode* node, int indent)
         print(varAssign.lhs, nextIndent + 2);
 
         printIndent(nextIndent);
+        printf("type:\n");
+        printIndent(nextIndent + 2);
+        printf("%u\n", _analyzer->inferType(varAssign.lhs).val);
+
+        printIndent(nextIndent);
         printf("rhs:\n");
         print(varAssign.rhs, nextIndent + 2);
+
+        printIndent(nextIndent);
+        printf("type:\n");
+        printIndent(nextIndent + 2);
+        printf("%u\n", _analyzer->inferType(varAssign.rhs).val);
       },
       [&](const LoopWhl& loopWhl) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("cond:\n");
         print(loopWhl.cond, nextIndent + 2);
@@ -123,8 +135,6 @@ TypedAST::print(const TypedNode* node, int indent)
         print(loopWhl.body, nextIndent + 2);
       },
       [&](const LoopFor& loopFor) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("pre:\n");
         print(loopFor.assigns, nextIndent + 2);
@@ -142,8 +152,6 @@ TypedAST::print(const TypedNode* node, int indent)
         print(loopFor.body, nextIndent + 2);
       },
       [&](const StmtIf& stmtIf) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("cond:\n");
         print(stmtIf.cond, nextIndent + 2);
@@ -159,8 +167,6 @@ TypedAST::print(const TypedNode* node, int indent)
         }
       },
       [&](const StmtSwitch& stmtSwitch) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("expr:\n");
         print(stmtSwitch.expr, nextIndent);
@@ -182,8 +188,6 @@ TypedAST::print(const TypedNode* node, int indent)
         }
       },
       [&](const StmtRet& stmtRet) {
-        printf("\n");
-
         if (!std::holds_alternative<std::monostate>(stmtRet.retValue->node)) {
           printIndent(nextIndent);
           printf("expr:\n");
@@ -191,7 +195,6 @@ TypedAST::print(const TypedNode* node, int indent)
         }
       },
       [&](const StmtBrk& stmtBrk) {
-        printf("\n");
         if (!std::holds_alternative<std::monostate>(stmtBrk.cond->node)) {
           printIndent(nextIndent);
           printf("cond:\n");
@@ -199,8 +202,6 @@ TypedAST::print(const TypedNode* node, int indent)
         }
       },
       [&](const BinaryExpr& binaryExpr) {
-        printf("\n");
-
         printIndent(nextIndent);
         printf("op: %s\n", op2String(static_cast<OpType>(binaryExpr.op)));
 
@@ -209,8 +210,18 @@ TypedAST::print(const TypedNode* node, int indent)
         print(binaryExpr.lhs, nextIndent + 2);
 
         printIndent(nextIndent);
+        printf("type:\n");
+        printIndent(nextIndent + 2);
+        printf("%u\n", _analyzer->inferType(binaryExpr.lhs).val);
+
+        printIndent(nextIndent);
         printf("rhs:\n");
         print(binaryExpr.rhs, nextIndent + 2);
+
+        printIndent(nextIndent);
+        printf("type:\n");
+        printIndent(nextIndent + 2);
+        printf("%u\n", _analyzer->inferType(binaryExpr.rhs).val);
       },
       [&](const UnaryExpr& unaryExpr) {
         std::string precStr = "(";
@@ -227,20 +238,23 @@ TypedAST::print(const TypedNode* node, int indent)
         printIndent(nextIndent);
         printf("expr:\n");
         print(unaryExpr.expr, nextIndent + 2);
-      },
-      [&](const MemberAccess& membAccess) {
-        printf("\n");
 
         printIndent(nextIndent);
+        printf("type:\n");
+        printIndent(nextIndent + 2);
+        printf("%u\n", _analyzer->inferType(unaryExpr.expr).val);
+      },
+      [&](const MemberAccess& membAccess) {
+        printIndent(nextIndent);
         printf("base:\n");
-        print(membAccess.base, nextIndent + 2);
+        // TODO: adapt this to variant
+        print(std::get<TypedNode*>(membAccess.base), nextIndent + 2);
 
         printIndent(nextIndent);
         printf("member:\n");
-        print(std::get<TypedNode*>(membAccess.membID), nextIndent + 2);
+        print(std::get<TypedNode*>(membAccess.memb), nextIndent + 2);
       },
       [&](const ArrayAccess& arrAccess) {
-        printf("\n");
         printIndent(nextIndent);
         printf("base:\n");
         print(arrAccess.base, nextIndent + 2);
@@ -250,30 +264,24 @@ TypedAST::print(const TypedNode* node, int indent)
         print(arrAccess.index, nextIndent + 2);
       },
       [&](const BoolVal& boolVal) {
-        printf("\n");
         std::string valStr = boolVal.val ? "true" : "false";
         printIndent(nextIndent);
         printf("%s\n", valStr.c_str());
       },
       [&](const NumVal& numVal) {
-        printf("\n");
         std::string valStr = std::to_string(numVal.val);
         printIndent(nextIndent);
         printf("%s\n", valStr.c_str());
       },
       [&](const StringVal& stringVal) {
-        printf("\n");
         printIndent(nextIndent);
         printf("%s\n", stringVal.val);
       },
       [&](const ArrayVal& arrVal) {
-        printf("\n");
-
         for (auto& e : arrVal.list)
           print(e, nextIndent);
       },
       [&](const NameExpr& nameExpr) {
-        printf("\n");
         printIndent(nextIndent);
         printf("%s\n", nameExpr.name);
       },

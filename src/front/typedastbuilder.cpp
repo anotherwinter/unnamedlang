@@ -1,6 +1,10 @@
 #include "typedastbuilder.h"
 #include "../front/ast.h"
 #include "symbolregistry.h"
+#include "typedast.h"
+#include <variant>
+
+using namespace HIR;
 
 TypedASTBuilder::TypedASTBuilder(Diagnostics& diag, SymbolRegistry& reg)
   : _diag(diag)
@@ -17,7 +21,7 @@ TypedASTBuilder::buildFromAST(const ASTNode* node)
 
   switch (node->type) {
     case ASTNodeType::NODE_LIST:
-      return buildNodeList(node->data.nodeList.list);
+      return buildNodeList(node);
     case ASTNodeType::NODE_FN_DEF:
       return buildFnDef(node);
     case ASTNodeType::NODE_FN_CALL:
@@ -63,9 +67,24 @@ TypedASTBuilder::buildFromAST(const ASTNode* node)
     case ASTNodeType::NODE_NAME:
       return buildName(node);
     default:
-      _diag.putMsg(STUB_ERR, DiagSeverity::ERROR, node->line, node->col);
+      _diag.putMsg(STUB_ERR, node->line, node->col);
       return allocTypedNode();
   }
+}
+
+template<typename T>
+TypedNode*
+TypedASTBuilder::allocTypedNode(const ASTNode* node)
+{
+  if (!node) {
+    _diag.putMsg(STUB_ERR, 0, 0);
+    return allocTypedNode<std::monostate>(nullptr);
+  }
+
+  void* raw = _arena.alloc(sizeof(TypedNode), alignof(TypedNode));
+  TypedNode* n = new (raw) TypedNode{ T{}, node->line, node->col };
+
+  return n;
 }
 
 void
@@ -89,11 +108,11 @@ TypedASTBuilder::predeclare(const ASTNode* node)
 }
 
 TypedNode*
-TypedASTBuilder::buildNodeList(const ASTNodeLL* list)
+TypedASTBuilder::buildNodeList(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<NodeList>();
+  TypedNode* n = allocTypedNode<NodeList>(node);
   auto& nodes = std::get<NodeList>(n->node);
-  const ASTNodeLL* it = list;
+  const ASTNodeLL* it = nodeList(node);
   while (it) {
     nodes.nodes.push_back(buildFromAST(it->node));
     it = it->next;
@@ -107,11 +126,14 @@ TypedASTBuilder::buildFnDef(const ASTNode* node)
 {
   std::vector<std::string> paramNames;
   std::vector<TypeID> paramTypes;
-  FunctionID fnID = evalFnDecl(node, paramNames, paramTypes);
+  FnDeclKey fnID = evalFnDecl(node, paramNames, paramTypes);
 
-  TypedNode* n = allocTypedNode<FnDef>();
+  TypedNode* n = allocTypedNode<FnDef>(node);
   auto& def = std::get<FnDef>(n->node);
-  def.fnID = fnID;
+  def.fnID = fnID.id;
+  def.ownerID = {};
+  def.nameID = fnID.nameID;
+  def.paramTypes = paramTypes;
   def.body = buildFromAST(node->data.fnDef.code);
 
   return n;
@@ -122,11 +144,11 @@ TypedASTBuilder::buildCallExpr(const ASTNode* node)
 {
   ASTNode* callee = node->data.fnCall.callee;
 
-  TypedNode* n = allocTypedNode<CallExpr>();
+  TypedNode* n = allocTypedNode<CallExpr>(node);
   auto& call = std::get<CallExpr>(n->node);
   call.callee = buildFromAST(callee);
 
-  ASTNodeLL* it = node->data.fnCall.arguments;
+  ASTNodeLL* it = nodeList(node->data.fnCall.arguments);
   while (it) {
     TypedNode* arg = buildFromAST(it->node);
     call.args.push_back(arg);
@@ -140,23 +162,24 @@ TypedASTBuilder::buildCallExpr(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildClassDef(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<ClassDef>();
+  TypedNode* n = allocTypedNode<ClassDef>(node);
   auto& def = std::get<ClassDef>(n->node);
 
   const char* className = node->data.classDef.name;
-  def.classID = _reg.beginDeclareClass(className);
+  def.classID = _reg.resolveClass(className);
 
   std::vector<MethodDeclInfo> methods;
   std::vector<FieldDeclInfo> fields;
-  ASTNodeLL* it = node->data.classDef.members;
-  size_t fieldIdx = 0;
+  ASTNodeLL* it = nodeList(node->data.classDef.members);
+  VarID fieldIdx = { 0 };
   while (it) {
     ASTNode* node = it->node;
     Modifier mod = {};
     // if defining field
     if (node->type == NODE_CLASSFIELD_DEF) {
       mod = node->data.classFieldDef.modifier;
-      fields.push_back({ node->data.classFieldDef.name, mod });
+      fields.push_back(
+        { node->data.classFieldDef.name, VarInfo{ fieldIdx, TypeID{}, mod } });
 
       def.fields.push_back(node->data.classFieldDef.name);
     }
@@ -164,14 +187,12 @@ TypedASTBuilder::buildClassDef(const ASTNode* node)
     else if (node->type == NODE_CLASSMETHOD_DEF) {
       mod = node->data.classMethodDef.modifier;
       ASTNode* fnDef = node->data.classMethodDef.function;
+      auto methodNode = buildFnDef(fnDef);
+      auto methodDef = std::get<FnDef>(methodNode->node);
       const char* methodName = fnDef->data.fnDef.name;
+      methods.push_back({ methodName, methodDef.fnID });
 
-      std::vector<std::string> paramNames;
-      std::vector<TypeID> paramTypes;
-      FunctionID fnID = evalFnDecl(fnDef, paramNames, paramTypes, def.classID);
-      methods.push_back({ methodName, mod, fnID });
-
-      def.methods.push_back({ fnID, buildFromAST(fnDef->data.fnDef.code) });
+      def.methods.push_back(methodNode);
     }
 
     it = it->next;
@@ -186,10 +207,10 @@ TypedASTBuilder::buildClassDef(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildEnumDef(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<EnumDef>();
+  TypedNode* n = allocTypedNode<EnumDef>(node);
   auto& def = std::get<EnumDef>(n->node);
 
-  ASTNodeLL* it = node->data.enumDef.elements;
+  ASTNodeLL* it = nodeList(node->data.enumDef.elements);
   while (it) {
     ASTNode* elem = it->node;
     ASTNode* rhs = elem->data.enumElement.expr;
@@ -205,7 +226,7 @@ TypedASTBuilder::buildEnumDef(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildVarDecl(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<VarDecl>();
+  TypedNode* n = allocTypedNode<VarDecl>(node);
   auto& decl = std::get<VarDecl>(n->node);
 
   const char* name = node->data.varDecl.name;
@@ -219,10 +240,10 @@ TypedASTBuilder::buildVarDecl(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildVarAssign(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<VarAssign>();
+  TypedNode* n = allocTypedNode<VarAssign>(node);
   auto& assign = std::get<VarAssign>(n->node);
 
-  assign.op = static_cast<AssignOp>(node->data.varAssign.op);
+  assign.op = static_cast<ExprOp>(node->data.varAssign.op);
   assign.lhs = buildFromAST(node->data.varAssign.lhs);
   assign.rhs = buildFromAST(node->data.varAssign.rhs);
 
@@ -232,7 +253,7 @@ TypedASTBuilder::buildVarAssign(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildWhl(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<LoopWhl>();
+  TypedNode* n = allocTypedNode<LoopWhl>(node);
   auto& loopWhl = std::get<LoopWhl>(n->node);
 
   loopWhl.cond = buildFromAST(node->data.loopWhl.condition);
@@ -244,7 +265,7 @@ TypedASTBuilder::buildWhl(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildFor(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<LoopFor>();
+  TypedNode* n = allocTypedNode<LoopFor>(node);
   auto& loopFor = std::get<LoopFor>(n->node);
 
   loopFor.assigns = buildNodeList(node->data.loopFor.assigns);
@@ -258,7 +279,7 @@ TypedASTBuilder::buildFor(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildIf(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<StmtIf>();
+  TypedNode* n = allocTypedNode<StmtIf>(node);
   auto& stmtIf = std::get<StmtIf>(n->node);
 
   stmtIf.cond = buildFromAST(node->data.ifBlock.condition);
@@ -271,11 +292,11 @@ TypedASTBuilder::buildIf(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildSwitch(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<StmtSwitch>();
+  TypedNode* n = allocTypedNode<StmtSwitch>(node);
   auto& stmtSwitch = std::get<StmtSwitch>(n->node);
 
   stmtSwitch.expr = buildFromAST(node->data.switchStmt.expr);
-  ASTNodeLL* casesIt = node->data.switchStmt.cases;
+  ASTNodeLL* casesIt = nodeList(node->data.switchStmt.cases);
   while (casesIt) {
     auto caseNode = casesIt->node->data.switchCase;
     stmtSwitch.cases.push_back(
@@ -290,7 +311,7 @@ TypedASTBuilder::buildSwitch(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildRet(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<StmtRet>();
+  TypedNode* n = allocTypedNode<StmtRet>(node);
   auto& stmtRet = std::get<StmtRet>(n->node);
 
   stmtRet.retValue = buildFromAST(node->data.ret.retValue);
@@ -301,7 +322,7 @@ TypedASTBuilder::buildRet(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildBrk(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<StmtBrk>();
+  TypedNode* n = allocTypedNode<StmtBrk>(node);
   auto& stmtBrk = std::get<StmtBrk>(n->node);
 
   stmtBrk.cond = buildFromAST(node->data.brk.condition);
@@ -312,11 +333,11 @@ TypedASTBuilder::buildBrk(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildBinaryExpr(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<BinaryExpr>();
+  TypedNode* n = allocTypedNode<BinaryExpr>(node);
   auto& binaryExpr = std::get<BinaryExpr>(n->node);
 
   auto nodeBinary = node->data.binaryOp;
-  binaryExpr.op = static_cast<BinaryExprOp>(nodeBinary.op);
+  binaryExpr.op = static_cast<ExprOp>(nodeBinary.op);
   binaryExpr.lhs = buildFromAST(nodeBinary.lhs);
   binaryExpr.rhs = buildFromAST(nodeBinary.rhs);
 
@@ -326,12 +347,12 @@ TypedASTBuilder::buildBinaryExpr(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildUnaryExpr(const ASTNode* node, UnaryExprPrec prec)
 {
-  TypedNode* n = allocTypedNode<UnaryExpr>();
+  TypedNode* n = allocTypedNode<UnaryExpr>(node);
   auto& unaryExpr = std::get<UnaryExpr>(n->node);
 
   auto nodeUnary = node->data.unaryOp;
 
-  unaryExpr.op = static_cast<UnaryExprOp>(nodeUnary.op);
+  unaryExpr.op = static_cast<ExprOp>(nodeUnary.op);
   unaryExpr.prec = prec;
   unaryExpr.expr = buildFromAST(nodeUnary.expr);
 
@@ -341,11 +362,11 @@ TypedASTBuilder::buildUnaryExpr(const ASTNode* node, UnaryExprPrec prec)
 TypedNode*
 TypedASTBuilder::buildMemberAccess(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<MemberAccess>();
+  TypedNode* n = allocTypedNode<MemberAccess>(node);
   auto& membAccess = std::get<MemberAccess>(n->node);
 
   membAccess.base = buildFromAST(node->data.memberAccess.left);
-  membAccess.membID = buildFromAST(node->data.memberAccess.right);
+  membAccess.memb = buildFromAST(node->data.memberAccess.right);
 
   return n;
 }
@@ -353,7 +374,7 @@ TypedASTBuilder::buildMemberAccess(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildArrayAccess(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<ArrayAccess>();
+  TypedNode* n = allocTypedNode<ArrayAccess>(node);
   auto& arrAccess = std::get<ArrayAccess>(n->node);
 
   arrAccess.base = buildFromAST(node->data.arrayAccess.left);
@@ -365,7 +386,7 @@ TypedASTBuilder::buildArrayAccess(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildBool(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<BoolVal>();
+  TypedNode* n = allocTypedNode<BoolVal>(node);
   auto& boolVal = std::get<BoolVal>(n->node);
 
   boolVal.val = node->data.boolValue;
@@ -375,7 +396,7 @@ TypedASTBuilder::buildBool(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildNumber(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<NumVal>();
+  TypedNode* n = allocTypedNode<NumVal>(node);
   auto& numVal = std::get<NumVal>(n->node);
 
   numVal.val = node->data.numberValue;
@@ -385,7 +406,7 @@ TypedASTBuilder::buildNumber(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildString(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<StringVal>();
+  TypedNode* n = allocTypedNode<StringVal>(node);
   auto& stringVal = std::get<StringVal>(n->node);
 
   stringVal.val = node->data.stringValue;
@@ -395,10 +416,10 @@ TypedASTBuilder::buildString(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildArray(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<ArrayVal>();
+  TypedNode* n = allocTypedNode<ArrayVal>(node);
   auto& arrVal = std::get<ArrayVal>(n->node);
 
-  auto arrElemsIt = node->data.array.elements;
+  auto arrElemsIt = node->data.array.elements->data.nodeList.list;
   while (arrElemsIt) {
     arrVal.list.push_back(buildFromAST(arrElemsIt->node));
 
@@ -411,26 +432,26 @@ TypedASTBuilder::buildArray(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildName(const ASTNode* node)
 {
-  TypedNode* n = allocTypedNode<NameExpr>();
+  TypedNode* n = allocTypedNode<NameExpr>(node);
   auto& nameExpr = std::get<NameExpr>(n->node);
 
   nameExpr.name = node->data.stringValue;
   return n;
 }
 
-FunctionID
+FnDeclKey
 TypedASTBuilder::evalFnDecl(const ASTNode* node,
                             std::vector<std::string>& paramNames,
                             std::vector<TypeID>& paramTypes,
                             TypeID ownerID)
 {
   if (!node)
-    return fnInvalidID;
+    return {};
 
   const char* fnName = node->data.fnDef.name;
 
   // fill in parameters
-  ASTNodeLL* paramsIt = node->data.fnDef.params;
+  ASTNodeLL* paramsIt = node->data.fnDef.params->data.nodeList.list;
   while (paramsIt) {
     const char* paramName = paramsIt->node->data.paramInfo.name;
     const char* paramType =
@@ -442,8 +463,7 @@ TypedASTBuilder::evalFnDecl(const ASTNode* node,
     paramsIt = paramsIt->next;
   }
 
-  FunctionID fnID =
-    _reg.declareFunction(fnName, paramNames, paramTypes, ownerID);
+  auto declKey = _reg.declareFunction(fnName, paramNames, paramTypes, ownerID);
 
-  return fnID;
+  return declKey;
 }

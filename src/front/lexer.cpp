@@ -33,10 +33,11 @@ Lexer::load(const std::string& str)
   _str = str;
   _ptr = _str.c_str();
   _end = _str.end().base();
-  _line = 0;
-  _col = 0;
+  _line = 1;
+  _col = 1;
   _error = false;
   _eof = str.empty();
+  _lastTok = {nullptr, TokenType::ENDOFTOKENS, _line, _col};
 }
 
 Token
@@ -48,6 +49,10 @@ Lexer::lexer()
   Token tok;
   skipSpaces();
   char c = getChar();
+
+  tok.line = _line;
+  tok.col = _col;
+
   advance();
 
   switch (c) {
@@ -262,6 +267,8 @@ Lexer::lexer()
     tok.type = TokenType::ERROR;
     recover();
   }
+
+  _lastTok = tok;
 
   return tok;
 }
@@ -554,5 +561,5 @@ void
 Lexer::error(LexerError code)
 {
   _error = true;
-  _diag.putMsg(static_cast<ErrorCode>(code), DiagSeverity::ERROR, _line, _col);
+  _diag.putMsg(static_cast<ErrorCode>(code), _line, _col);
 }

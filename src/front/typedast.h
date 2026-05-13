@@ -1,13 +1,16 @@
 #pragma once
+#include "ast.h"
 #include "shared.h"
 #include "symbolregistry.h"
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <variant>
 
+namespace HIR {
 struct TypedNode;
 
-enum class BinaryExprOp
+enum class ExprOp : uint32_t
 {
   Add = 0,
   Sub,
@@ -27,30 +30,20 @@ enum class BinaryExprOp
   Neq,
   LogicAnd,
   LogicOr,
-  _Count,
-};
-
-enum class UnaryExprOp
-{
-  Neg = to_underlying(BinaryExprOp::_Count),
-  Inc,
-  Dec,
-  _Count,
-};
-
-enum class AssignOp
-{
-  None = to_underlying(UnaryExprOp::_Count),
-  Add,
-  Sub,
-  Mul,
-  Div,
-  Mod,
-  Shiftl,
-  Shiftr,
-  And,
-  Or,
-  Xor,
+  UnaryNeg,
+  UnaryInc,
+  UnaryDec,
+  Assign,
+  AssignAdd,
+  AssignSub,
+  AssignMul,
+  AssignDiv,
+  AssignMod,
+  AssignShiftl,
+  AssignShiftr,
+  AssignAnd,
+  AssignOr,
+  AssignXor,
 };
 
 struct NodeList
@@ -60,14 +53,17 @@ struct NodeList
 
 struct FnDef
 {
-  FunctionID fnID = fnInvalidID;
+  FunctionID fnID = {};
+  TypeID ownerID = {};
+  FnNameID nameID = {};
+  std::vector<TypeID> paramTypes;
   TypedNode* body;
 };
 
 struct FnResolutionKey
 {
-  TypeID ownerID;
-  FnNameID nameID;
+  TypeID ownerID = {};
+  FnNameID nameID = {};
 };
 
 struct CallExpr
@@ -82,22 +78,21 @@ struct CallExpr
 
   ResolutionType resType = ResolutionType::Unresolved;
 
-  const TypedNode* callee = nullptr; // valid always, except for error
-  FnResolutionKey fnKey = { classInvalidID,
-                            fnNameInvalidID }; // valid if static resolving
+  TypedNode* callee = nullptr; // valid always, except for error
+  FnResolution fnRes;          // valid if static resolving
 
-  // after pass1 every call is unresolved, so this node contains only other
+  // after pass1 every call is unresolved, so callee node contains only other
   // nodes after pass1
-  // after pass2, resolving is done where it is possible, and node may contain
-  // resolved function id
+  // after pass2, resolving is done where it is possible, and callee node may
+  // contain resolved function id
 
   std::vector<TypedNode*> args;
 };
 
 struct ClassDef
 {
-  TypeID classID = classInvalidID;
-  std::vector<FnDef> methods;
+  TypeID classID = {};
+  std::vector<TypedNode*> methods;
   std::vector<const char*> fields;
 };
 
@@ -115,13 +110,14 @@ struct EnumDef
 struct VarDecl
 {
   const char* name;
-  Modifier mod;
+  Modifier mod = {};
+  TypeID type = {};
   TypedNode* val;
 };
 
 struct VarAssign
 {
-  AssignOp op;
+  ExprOp op;
   TypedNode* lhs;
   TypedNode* rhs;
 };
@@ -171,9 +167,10 @@ struct StmtBrk
 
 struct BinaryExpr
 {
-  BinaryExprOp op;
+  ExprOp op;
   TypedNode* lhs;
   TypedNode* rhs;
+  TypeID type = {};
 };
 
 enum class UnaryExprPrec
@@ -184,19 +181,24 @@ enum class UnaryExprPrec
 
 struct UnaryExpr
 {
-  UnaryExprOp op;
+  ExprOp op;
   UnaryExprPrec prec;
   TypedNode* expr;
+  TypeID type = {};
 };
 
 struct MemberAccess
 {
-  TypedNode* base;
+  std::variant<TypedNode*,    // unresolved
+               VarResolution, // variable / field
+               FunctionID     // method
+               >
+    base;
   std::variant<TypedNode*, // unresolved
                VarID,      // field
                FunctionID  // method
                >
-    membID;
+    memb;
 };
 
 struct ArrayAccess
@@ -228,17 +230,21 @@ struct ArrayVal
 struct NameExpr
 {
   const char* name;
-  VarID id = varInvalidID;
+  VarResolution varRes;
+  FnNameResolution fnNameRes;
 };
 
 struct TypedNode
 {
-  std::variant<std::monostate
-#define X(Name, Cat) , Name
+  std::variant<
+#define X(Name, Cat) Name,
 #include "typednodes_cats.def"
 #undef X
-               >
+    std::monostate>
     node;
+
+  size_t line;
+  size_t col;
 };
 
 template<typename T>
@@ -284,13 +290,9 @@ catOf(const TypedNode& n)
                     n.node);
 }
 
-class Diagnostics;
-struct ASTNode;
-struct ASTNodeLL;
-
-struct AnalyzedTag
+struct Analyzed
 {};
-struct UnanalyzedTag
+struct Unanalyzed
 {};
 
 template<typename Tag>
@@ -306,8 +308,9 @@ class TypedAST
 {
 public:
   TypedAST(Diagnostics& diag);
-  TypedTree<UnanalyzedTag> build(const ASTNode* root);
-  TypedTree<AnalyzedTag> analyze(TypedTree<UnanalyzedTag> root);
+  ~TypedAST();
+  TypedTree<Unanalyzed> build(const ASTNode* root);
+  TypedTree<Analyzed> analyze(TypedTree<Unanalyzed> root);
   void print(const TypedNode* node, int indent = 0);
 
 private:
@@ -331,3 +334,5 @@ private:
       putchar(' ');
   }
 };
+
+}

@@ -7,6 +7,11 @@
 %parse-param { ParserContext& ctx }
 %lex-param   { Lexer& lexer }
 
+%initial-action
+{
+    setLexer(&lexer);
+};
+
 %code requires {
 #include "ast.h"
 #include "lexer.h"

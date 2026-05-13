@@ -2,6 +2,7 @@
 #include "diagnostics.h"
 #include "front/lexer.h"
 #include "front/parser.hpp"
+#include "front/typedast.h"
 
 class Initializer
 {
@@ -11,10 +12,12 @@ public:
   inline Diagnostics& getDiag() { return _diag; }
   inline Lexer& getLexer() { return _lex; }
   inline yy::parser& getParser() { return _parser; }
+  inline HIR::TypedAST& getTypedAST() { return _typedAST; }
 
 private:
   Diagnostics _diag;
   Lexer _lex;
   yy::parser _parser;
   ParserContext _parserCtx = {};
+  HIR::TypedAST _typedAST;
 };

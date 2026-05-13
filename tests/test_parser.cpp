@@ -1,28 +1,28 @@
-#include "../../src/ast.h"
-#include "../../src/bnf.tab.h"
-#include "../../src/eval_ast.h"
-#include "../../src/lexer.h"
+#include "init_tests.h"
+#include <gtest/gtest.h>
 
 extern ASTNode* astRoot;
 
-int main() {
-    lexerInit();
+int
+main()
+{
+  char line[128];
+  while (true) {
+    printf("> ");
+    if (fgets(line, sizeof(line), stdin) == nullptr) {
+      if (!feof(stdin))
+        printf("Input error\n");
 
-    char line[128];
-    while (true) {
-        printf("> ");
-        fgets(line, sizeof(line), stdin);
-        if (line[0] == 'q' && line[1] == '\n') {
-            break;
-        }
-        lexerSetText(line);
-        if (yyparse() == 0) {
-            printASTRoot(astRoot);
-            freeNode(astRoot);
-        } else {
-            printf("parse fail\n");
-        }
+      break;
     }
 
-    return 0;
+    if (line[0] == 'q' && line[1] == '\n')
+      break;
+
+    init.getLexer().load(line);
+    if (init.getParser().parse() == 0)
+      printASTRoot(astRoot);
+  }
+
+  return 0;
 }

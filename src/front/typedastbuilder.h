@@ -7,6 +7,8 @@ struct ASTNode;
 class SymbolRegistry;
 class Diagnostics;
 
+namespace HIR {
+
 // pass 0/1 - Typed AST builder
 class TypedASTBuilder
 {
@@ -14,7 +16,7 @@ public:
   TypedASTBuilder(Diagnostics& diag, SymbolRegistry& reg);
 
   // pass0/1 - build typed ast
-  inline TypedTree<UnanalyzedTag> build(const ASTNode* root)
+  inline TypedTree<Unanalyzed> build(const ASTNode* root)
   {
     _arena.reset();
     predeclare(root);
@@ -32,17 +34,11 @@ private:
   ArenaAlloc _arena;
 
   template<typename T>
-  inline TypedNode* allocTypedNode()
-  {
-    TypedNode* n = (TypedNode*)_arena.alloc(sizeof(TypedNode));
-    n->node = T{};
-
-    return n;
-  }
+  TypedNode* allocTypedNode(const ASTNode* node);
 
   inline TypedNode* allocTypedNode()
   {
-    return allocTypedNode<std::monostate>();
+    return allocTypedNode<std::monostate>(nullptr);
   }
 
   // pass0 - predeclare all class occurences
@@ -53,7 +49,7 @@ private:
   TypedNode* buildFromAST(const ASTNode* node);
 
   // pass1 methods
-  TypedNode* buildNodeList(const ASTNodeLL* list);
+  TypedNode* buildNodeList(const ASTNode* node);
   TypedNode* buildFnDef(const ASTNode* node);
   TypedNode* buildCallExpr(const ASTNode* node);
   TypedNode* buildClassDef(const ASTNode* node);
@@ -76,8 +72,10 @@ private:
   TypedNode* buildArray(const ASTNode* node);
   TypedNode* buildName(const ASTNode* node);
 
-  [[nodiscard]] FunctionID evalFnDecl(const ASTNode* node,
-                                      std::vector<std::string>& paramNames,
-                                      std::vector<TypeID>& paramTypes,
-                                      TypeID ownerID = dynamicTypeID);
+  [[nodiscard]] FnDeclKey evalFnDecl(const ASTNode* node,
+                                     std::vector<std::string>& paramNames,
+                                     std::vector<TypeID>& paramTypes,
+                                     TypeID ownerID = dynamicTypeID);
 };
+
+}

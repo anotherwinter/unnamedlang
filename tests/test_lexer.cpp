@@ -1,11 +1,11 @@
-#include "../../src/errorinfo.h"
-#include "../../src/lexer.h"
+#include "init_tests.h"
 #include <cstdio>
+#include <gtest/gtest.h>
 
 int
 main()
 {
-  lexerInit();
+  Lexer& lex = init.getLexer();
 
   char line[128];
   while (true) {
@@ -14,20 +14,14 @@ main()
     if (line[0] == 'q' && line[1] == '\n') {
       break;
     }
-    lexerSetText(line);
-    Token* token = nullptr;
+    lex.load(line);
+    Token token;
     do {
-      token = lexer();
+      token = lex.lexer();
       printf(
-        "token %s, type %s\n", token->tok, lexerTypeName(token->type).c_str());
+        "token %s, type %s\n", token.str, lex.lexerTypeName(token.type));
 
-      std::vector<ErrorInfo> errors = lexerGetErrors();
-      for (auto& e : errors) {
-        printf(
-          "error: %s. line: %lu, col: %lu\n", e.msg.c_str(), e.line, e.col);
-      }
-      lexerClearErrors();
-    } while (token->type != TokenType::ENDOFTOKENS);
+    } while (token.type != TokenType::ENDOFTOKENS);
   }
 
   return 0;

@@ -37,7 +37,7 @@
 
 
 // First part of user prologue.
-#line 22 "bnf.y"
+#line 27 "bnf.y"
 
 #include <stdio.h>
 #include "bison_wrapper.h"
@@ -451,6 +451,15 @@ namespace yy {
     YYCDEBUG << "Starting parse\n";
 
 
+    // User initialization code.
+#line 11 "bnf.y"
+{
+    setLexer(&lexer);
+}
+
+#line 461 "parser.cpp"
+
+
     /* Initialize the stack.  The initial state will be set in
        yynewstate, since the latter expects the semantical and the
        location values to have been already stored, initialize these
@@ -578,1360 +587,1360 @@ namespace yy {
           switch (yyn)
             {
   case 2: // program: opt_program_stmt_list
-#line 224 "bnf.y"
+#line 229 "bnf.y"
             {
                 astRoot = (yystack_[0].value.node);
             }
-#line 586 "parser.cpp"
+#line 595 "parser.cpp"
     break;
 
   case 7: // opt_program_stmt_list: program_stmt_list opt_delimiter_list
-#line 241 "bnf.y"
+#line 246 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[1].value.node);
             }
-#line 594 "parser.cpp"
+#line 603 "parser.cpp"
     break;
 
   case 8: // opt_program_stmt_list: opt_delimiter_list
-#line 245 "bnf.y"
+#line 250 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
-            }
-#line 602 "parser.cpp"
-    break;
-
-  case 9: // program_stmt_list: program_stmt_list delimiter_list program_stmt
-#line 252 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 611 "parser.cpp"
     break;
 
-  case 10: // program_stmt_list: program_stmt
+  case 9: // program_stmt_list: program_stmt_list delimiter_list program_stmt
 #line 257 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 620 "parser.cpp"
+    break;
+
+  case 10: // program_stmt_list: program_stmt
+#line 262 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 619 "parser.cpp"
+#line 628 "parser.cpp"
     break;
 
   case 11: // program_stmt: stmt
-#line 264 "bnf.y"
+#line 269 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 627 "parser.cpp"
+#line 636 "parser.cpp"
     break;
 
   case 12: // program_stmt: global_stmt
-#line 268 "bnf.y"
+#line 273 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 635 "parser.cpp"
+#line 644 "parser.cpp"
     break;
 
   case 13: // global_stmt: global_stmt_stmt
-#line 276 "bnf.y"
+#line 281 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 643 "parser.cpp"
+#line 652 "parser.cpp"
     break;
 
   case 14: // global_stmt_stmt: class_def
-#line 283 "bnf.y"
+#line 288 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 651 "parser.cpp"
+#line 660 "parser.cpp"
     break;
 
   case 15: // global_stmt_stmt: fn_def
-#line 287 "bnf.y"
+#line 292 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 659 "parser.cpp"
+#line 668 "parser.cpp"
     break;
 
   case 16: // global_stmt_stmt: enum_stmt
-#line 291 "bnf.y"
+#line 296 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 667 "parser.cpp"
+#line 676 "parser.cpp"
     break;
 
   case 17: // stmt: stmt_stmt
-#line 299 "bnf.y"
+#line 304 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 675 "parser.cpp"
+#line 684 "parser.cpp"
     break;
 
   case 18: // stmt_stmt: var_decl
-#line 306 "bnf.y"
+#line 311 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 683 "parser.cpp"
+#line 692 "parser.cpp"
     break;
 
   case 19: // stmt_stmt: cntrl_cnstrct
-#line 310 "bnf.y"
+#line 315 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 691 "parser.cpp"
+#line 700 "parser.cpp"
     break;
 
   case 20: // stmt_stmt: del_stmt
-#line 314 "bnf.y"
+#line 319 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 699 "parser.cpp"
+#line 708 "parser.cpp"
     break;
 
   case 21: // stmt_stmt: assign
-#line 318 "bnf.y"
+#line 323 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 707 "parser.cpp"
+#line 716 "parser.cpp"
     break;
 
   case 22: // stmt_stmt: expr
-#line 322 "bnf.y"
+#line 327 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 715 "parser.cpp"
+#line 724 "parser.cpp"
     break;
 
   case 23: // code_block: opt_delimiter_list LBRACE opt_stmt_list RBRACE
-#line 330 "bnf.y"
+#line 335 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[1].value.node);
             }
-#line 723 "parser.cpp"
+#line 732 "parser.cpp"
     break;
 
   case 24: // opt_stmt_list: stmt_list
-#line 337 "bnf.y"
+#line 342 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 731 "parser.cpp"
+#line 740 "parser.cpp"
     break;
 
   case 25: // opt_stmt_list: %empty
-#line 341 "bnf.y"
+#line 346 "bnf.y"
             {
                 (yylhs.value.node) = NULL;
             }
-#line 739 "parser.cpp"
+#line 748 "parser.cpp"
     break;
 
   case 26: // $@1: %empty
-#line 348 "bnf.y"
+#line 353 "bnf.y"
             {
                 ctx.nodeLLStack.push(newNodeList((yystack_[0].value.node)));
-            }
-#line 747 "parser.cpp"
-    break;
-
-  case 27: // stmt_list: opt_delimiter_list stmt_stmt $@1 stmt_list_tail
-#line 352 "bnf.y"
-            {
-              (yylhs.value.node) = ctx.nodeLLStack.top();
-              ctx.nodeLLStack.pop();
             }
 #line 756 "parser.cpp"
     break;
 
+  case 27: // stmt_list: opt_delimiter_list stmt_stmt $@1 stmt_list_tail
+#line 357 "bnf.y"
+            {
+              (yylhs.value.node) = ctx.nodeLLStack.top();
+              ctx.nodeLLStack.pop();
+            }
+#line 765 "parser.cpp"
+    break;
+
   case 28: // stmt_list_tail: delimiter_list stmt_stmt stmt_list_tail
-#line 360 "bnf.y"
+#line 365 "bnf.y"
             {
                 astNodeLLAppend(ctx.nodeLLStack.top(), (yystack_[1].value.node));
             }
-#line 764 "parser.cpp"
+#line 773 "parser.cpp"
     break;
 
   case 31: // code_block_or_stmt: code_block
-#line 369 "bnf.y"
+#line 374 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 772 "parser.cpp"
+#line 781 "parser.cpp"
     break;
 
   case 32: // code_block_or_stmt: opt_delimiter_list stmt
-#line 373 "bnf.y"
+#line 378 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 780 "parser.cpp"
+#line 789 "parser.cpp"
     break;
 
   case 33: // del_stmt: DEL expr
-#line 381 "bnf.y"
+#line 386 "bnf.y"
             {
                 (yylhs.value.node) = newDelStmt((yystack_[0].value.node));
             }
-#line 788 "parser.cpp"
+#line 797 "parser.cpp"
     break;
 
   case 34: // cntrl_cnstrct: loop_whl
-#line 389 "bnf.y"
+#line 394 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 796 "parser.cpp"
+#line 805 "parser.cpp"
     break;
 
   case 35: // cntrl_cnstrct: loop_for
-#line 393 "bnf.y"
+#line 398 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 804 "parser.cpp"
+#line 813 "parser.cpp"
     break;
 
   case 36: // cntrl_cnstrct: switch_stmt
-#line 397 "bnf.y"
+#line 402 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 812 "parser.cpp"
+#line 821 "parser.cpp"
     break;
 
   case 37: // cntrl_cnstrct: ret_stmt
-#line 401 "bnf.y"
+#line 406 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 820 "parser.cpp"
+#line 829 "parser.cpp"
     break;
 
   case 38: // cntrl_cnstrct: brk_stmt
-#line 405 "bnf.y"
+#line 410 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 828 "parser.cpp"
+#line 837 "parser.cpp"
     break;
 
   case 39: // cntrl_cnstrct: if_stmt
-#line 409 "bnf.y"
+#line 414 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 836 "parser.cpp"
+#line 845 "parser.cpp"
     break;
 
   case 40: // cntrl_cnstrct: toss_stmt
-#line 413 "bnf.y"
+#line 418 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
             }
-#line 844 "parser.cpp"
+#line 853 "parser.cpp"
     break;
 
   case 41: // loop_whl: WHL LPAREN expr RPAREN code_block_or_stmt
-#line 420 "bnf.y"
+#line 425 "bnf.y"
             {
                 (yylhs.value.node) = newLoopWhl((yystack_[2].value.node), (yystack_[0].value.node));
             }
-#line 852 "parser.cpp"
+#line 861 "parser.cpp"
     break;
 
   case 42: // loop_for: FOR LPAREN loop_for_init COLON loop_for_cond COLON loop_for_post_iter RPAREN code_block_or_stmt
-#line 427 "bnf.y"
+#line 432 "bnf.y"
             {
                 (yylhs.value.node) = newLoopFor((yystack_[6].value.node), (yystack_[4].value.node), (yystack_[2].value.node), (yystack_[0].value.node));
             }
-#line 860 "parser.cpp"
+#line 869 "parser.cpp"
     break;
 
   case 43: // loop_for_init: opt_expr_list
-#line 434 "bnf.y"
+#line 439 "bnf.y"
             {
                 (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 868 "parser.cpp"
-    break;
-
-  case 44: // loop_for_cond: loop_for_cond COMMA lvl_logic
-#line 441 "bnf.y"
-            {
-                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
-                (yylhs.value.node) = (yystack_[2].value.node);
             }
 #line 877 "parser.cpp"
     break;
 
-  case 45: // loop_for_cond: lvl_logic
+  case 44: // loop_for_cond: loop_for_cond COMMA lvl_logic
 #line 446 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 885 "parser.cpp"
-    break;
-
-  case 46: // loop_for_post_iter: opt_expr_list
-#line 453 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 893 "parser.cpp"
-    break;
-
-  case 47: // ret_stmt: RET
-#line 460 "bnf.y"
-            {
-                (yylhs.value.node) = newRetStmt(NULL);
-            }
-#line 901 "parser.cpp"
-    break;
-
-  case 48: // ret_stmt: RET expr
-#line 464 "bnf.y"
-            {
-                (yylhs.value.node) = newRetStmt((yystack_[0].value.node));
-            }
-#line 909 "parser.cpp"
-    break;
-
-  case 49: // switch_stmt: SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list opt_delimiter_list RBRACE
-#line 471 "bnf.y"
-            {
-                (yylhs.value.node) = newSwitchStmt((yystack_[5].value.node), (yystack_[2].value.node));
-            }
-#line 917 "parser.cpp"
-    break;
-
-  case 50: // opt_switch_case_list: switch_case_list
-#line 478 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 925 "parser.cpp"
-    break;
-
-  case 51: // opt_switch_case_list: %empty
-#line 482 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 933 "parser.cpp"
-    break;
-
-  case 52: // switch_case_list: switch_case_list delimiter_list switch_case
-#line 489 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 886 "parser.cpp"
+    break;
+
+  case 45: // loop_for_cond: lvl_logic
+#line 451 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 894 "parser.cpp"
+    break;
+
+  case 46: // loop_for_post_iter: opt_expr_list
+#line 458 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 902 "parser.cpp"
+    break;
+
+  case 47: // ret_stmt: RET
+#line 465 "bnf.y"
+            {
+                (yylhs.value.node) = newRetStmt(NULL);
+            }
+#line 910 "parser.cpp"
+    break;
+
+  case 48: // ret_stmt: RET expr
+#line 469 "bnf.y"
+            {
+                (yylhs.value.node) = newRetStmt((yystack_[0].value.node));
+            }
+#line 918 "parser.cpp"
+    break;
+
+  case 49: // switch_stmt: SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list opt_delimiter_list RBRACE
+#line 476 "bnf.y"
+            {
+                (yylhs.value.node) = newSwitchStmt((yystack_[5].value.node), (yystack_[2].value.node));
+            }
+#line 926 "parser.cpp"
+    break;
+
+  case 50: // opt_switch_case_list: switch_case_list
+#line 483 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 934 "parser.cpp"
+    break;
+
+  case 51: // opt_switch_case_list: %empty
+#line 487 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
             }
 #line 942 "parser.cpp"
     break;
 
-  case 53: // switch_case_list: switch_case
+  case 52: // switch_case_list: switch_case_list delimiter_list switch_case
 #line 494 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 950 "parser.cpp"
-    break;
-
-  case 54: // switch_case: expr COLON code_block_or_stmt
-#line 501 "bnf.y"
-            {
-                (yylhs.value.node) = newSwitchCase((yystack_[2].value.node), (yystack_[0].value.node), false);
-            }
-#line 958 "parser.cpp"
-    break;
-
-  case 55: // switch_case: DEFAULT COLON code_block_or_stmt
-#line 505 "bnf.y"
-            {
-                (yylhs.value.node) = newSwitchCase(NULL, (yystack_[0].value.node), true);
-            }
-#line 966 "parser.cpp"
-    break;
-
-  case 56: // brk_stmt: BRK LPAREN expr RPAREN
-#line 512 "bnf.y"
-            {
-                (yylhs.value.node) = newBrkStmt((yystack_[1].value.node));
-            }
-#line 974 "parser.cpp"
-    break;
-
-  case 57: // brk_stmt: BRK
-#line 516 "bnf.y"
-            {
-                (yylhs.value.node) = newBrkStmt(NULL);
-            }
-#line 982 "parser.cpp"
-    break;
-
-  case 58: // if_stmt: IF LPAREN expr RPAREN code_block_or_stmt opt_else
-#line 523 "bnf.y"
-            {
-                (yylhs.value.node) = newIfStmt((yystack_[3].value.node), (yystack_[1].value.node), (yystack_[0].value.node));
-            }
-#line 990 "parser.cpp"
-    break;
-
-  case 59: // opt_else: ELSE code_block_or_stmt
-#line 530 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 998 "parser.cpp"
-    break;
-
-  case 60: // opt_else: %empty
-#line 534 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1006 "parser.cpp"
-    break;
-
-  case 61: // toss_stmt: TOSS expr
-#line 541 "bnf.y"
-            {
-                (yylhs.value.node) = newTossStmt((yystack_[0].value.node));
-            }
-#line 1014 "parser.cpp"
-    break;
-
-  case 62: // op_assign: EQUALS
-#line 549 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1022 "parser.cpp"
-    break;
-
-  case 63: // op_assign: ASSIGN_ADD
-#line 553 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1030 "parser.cpp"
-    break;
-
-  case 64: // op_assign: ASSIGN_SUB
-#line 557 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1038 "parser.cpp"
-    break;
-
-  case 65: // op_assign: ASSIGN_DIV
-#line 561 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1046 "parser.cpp"
-    break;
-
-  case 66: // op_assign: ASSIGN_MUL
-#line 565 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1054 "parser.cpp"
-    break;
-
-  case 67: // op_assign: ASSIGN_MOD
-#line 569 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1062 "parser.cpp"
-    break;
-
-  case 68: // op_assign: ASSIGN_XOR
-#line 573 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1070 "parser.cpp"
-    break;
-
-  case 69: // op_assign: ASSIGN_SHIFTL
-#line 577 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1078 "parser.cpp"
-    break;
-
-  case 70: // op_assign: ASSIGN_SHIFTR
-#line 581 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1086 "parser.cpp"
-    break;
-
-  case 71: // op_assign: ASSIGN_AND
-#line 585 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1094 "parser.cpp"
-    break;
-
-  case 72: // op_assign: ASSIGN_OR
-#line 589 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1102 "parser.cpp"
-    break;
-
-  case 73: // op_logic: LOGIC_AND
-#line 596 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1110 "parser.cpp"
-    break;
-
-  case 74: // op_logic: LOGIC_OR
-#line 600 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1118 "parser.cpp"
-    break;
-
-  case 75: // op_cond: COND_GT
-#line 607 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1126 "parser.cpp"
-    break;
-
-  case 76: // op_cond: COND_GEQ
-#line 611 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1134 "parser.cpp"
-    break;
-
-  case 77: // op_cond: COND_LT
-#line 615 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1142 "parser.cpp"
-    break;
-
-  case 78: // op_cond: COND_LEQ
-#line 619 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1150 "parser.cpp"
-    break;
-
-  case 79: // op_cond: COND_EQ
-#line 623 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1158 "parser.cpp"
-    break;
-
-  case 80: // op_cond: COND_NEQ
-#line 627 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1166 "parser.cpp"
-    break;
-
-  case 81: // op_bitwise_xor: BIT_XOR
-#line 634 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1174 "parser.cpp"
-    break;
-
-  case 82: // op_bitwise_or: BIT_OR
-#line 641 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1182 "parser.cpp"
-    break;
-
-  case 83: // op_bitwise_and: BIT_AND
-#line 648 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1190 "parser.cpp"
-    break;
-
-  case 84: // op_bitwise_shift: BIT_SHIFTL
-#line 655 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1198 "parser.cpp"
-    break;
-
-  case 85: // op_bitwise_shift: BIT_SHIFTR
-#line 659 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1206 "parser.cpp"
-    break;
-
-  case 86: // op_arithm_add: PLUS
-#line 666 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1214 "parser.cpp"
-    break;
-
-  case 87: // op_arithm_add: MINUS
-#line 670 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1222 "parser.cpp"
-    break;
-
-  case 88: // op_arithm_mul: STAR
-#line 677 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1230 "parser.cpp"
-    break;
-
-  case 89: // op_arithm_mul: SLASH
-#line 681 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1238 "parser.cpp"
-    break;
-
-  case 90: // op_unary_neg: MINUS
-#line 688 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1246 "parser.cpp"
-    break;
-
-  case 91: // op_unary_logic_neg: BANG
-#line 695 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1254 "parser.cpp"
-    break;
-
-  case 92: // op_unary_inc: UNARY_DEC
-#line 702 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1262 "parser.cpp"
-    break;
-
-  case 93: // op_unary_inc: UNARY_INC
-#line 706 "bnf.y"
-            {
-                (yylhs.value.opType) = (yystack_[0].value.opType);
-            }
-#line 1270 "parser.cpp"
-    break;
-
-  case 94: // expr: lvl_logic
-#line 714 "bnf.y"
-            { 
-                (yylhs.value.node) = (yystack_[0].value.node); 
-            }
-#line 1278 "parser.cpp"
-    break;
-
-  case 95: // lvl_logic: lvl_logic op_logic lvl_cond
-#line 721 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1286 "parser.cpp"
-    break;
-
-  case 96: // lvl_logic: lvl_cond
-#line 725 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1294 "parser.cpp"
-    break;
-
-  case 97: // lvl_cond: lvl_cond op_cond lvl_bitwise_xor
-#line 732 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1302 "parser.cpp"
-    break;
-
-  case 98: // lvl_cond: lvl_bitwise_xor
-#line 736 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1310 "parser.cpp"
-    break;
-
-  case 99: // lvl_bitwise_xor: lvl_bitwise_xor op_bitwise_xor lvl_bitwise_or
-#line 743 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1318 "parser.cpp"
-    break;
-
-  case 100: // lvl_bitwise_xor: lvl_bitwise_or
-#line 747 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1326 "parser.cpp"
-    break;
-
-  case 101: // lvl_bitwise_or: lvl_bitwise_or op_bitwise_or lvl_bitwise_and
-#line 754 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1334 "parser.cpp"
-    break;
-
-  case 102: // lvl_bitwise_or: lvl_bitwise_and
-#line 758 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1342 "parser.cpp"
-    break;
-
-  case 103: // lvl_bitwise_and: lvl_bitwise_and op_bitwise_and lvl_bitwise_shift
-#line 765 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1350 "parser.cpp"
-    break;
-
-  case 104: // lvl_bitwise_and: lvl_bitwise_shift
-#line 769 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1358 "parser.cpp"
-    break;
-
-  case 105: // lvl_bitwise_shift: lvl_bitwise_shift op_bitwise_shift lvl_arithm_add
-#line 776 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1366 "parser.cpp"
-    break;
-
-  case 106: // lvl_bitwise_shift: lvl_arithm_add
-#line 780 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1374 "parser.cpp"
-    break;
-
-  case 107: // lvl_arithm_add: lvl_arithm_add op_arithm_add lvl_arithm_mul
-#line 787 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1382 "parser.cpp"
-    break;
-
-  case 108: // lvl_arithm_add: lvl_arithm_mul
-#line 791 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1390 "parser.cpp"
-    break;
-
-  case 109: // lvl_arithm_mul: lvl_arithm_mul op_arithm_mul lvl_unary_neg
-#line 798 "bnf.y"
-            {   
-                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1398 "parser.cpp"
-    break;
-
-  case 110: // lvl_arithm_mul: lvl_unary_neg
-#line 802 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1406 "parser.cpp"
-    break;
-
-  case 111: // lvl_unary_neg: op_unary_neg lvl_unary_inc
-#line 809 "bnf.y"
-            {
-                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
-            }
-#line 1414 "parser.cpp"
-    break;
-
-  case 112: // lvl_unary_neg: op_unary_logic_neg lvl_unary_inc
-#line 813 "bnf.y"
-            {
-                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
-            }
-#line 1422 "parser.cpp"
-    break;
-
-  case 113: // lvl_unary_neg: lvl_unary_inc
-#line 817 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1430 "parser.cpp"
-    break;
-
-  case 114: // lvl_unary_inc: op_unary_inc lvl_postfix
-#line 824 "bnf.y"
-            {
-                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
-            }
-#line 1438 "parser.cpp"
-    break;
-
-  case 115: // lvl_unary_inc: lvl_postfix
-#line 828 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1446 "parser.cpp"
-    break;
-
-  case 116: // lvl_postfix: lvl_postfix DOT nameNode
-#line 835 "bnf.y"
-            {   
-                (yylhs.value.node) = newMemberAccess((yystack_[2].value.node), (yystack_[0].value.node));   
-            }
-#line 1454 "parser.cpp"
-    break;
-
-  case 117: // lvl_postfix: lvl_postfix LPAREN opt_expr_list RPAREN
-#line 839 "bnf.y"
-            {   
-                (yylhs.value.node) = newFnCall((yystack_[3].value.node), (yystack_[1].value.node));   
-            }
-#line 1462 "parser.cpp"
-    break;
-
-  case 118: // lvl_postfix: lvl_postfix LSQUARE opt_expr RSQUARE
-#line 843 "bnf.y"
-            {   
-                (yylhs.value.node) = newArrayAccess((yystack_[3].value.node), (yystack_[1].value.node));   
-            }
-#line 1470 "parser.cpp"
-    break;
-
-  case 119: // lvl_postfix: lvl_postfix op_unary_inc
-#line 847 "bnf.y"
-            {   
-                (yylhs.value.node) = newUnaryPost((yystack_[0].value.opType), (yystack_[1].value.node)); 
-            }
-#line 1478 "parser.cpp"
-    break;
-
-  case 120: // lvl_postfix: primary
-#line 851 "bnf.y"
-            {   
-                (yylhs.value.node) = (yystack_[0].value.node);    
-            }
-#line 1486 "parser.cpp"
-    break;
-
-  case 121: // primary: literal
-#line 858 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1494 "parser.cpp"
-    break;
-
-  case 122: // primary: nameNode
-#line 862 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1502 "parser.cpp"
-    break;
-
-  case 123: // primary: LPAREN expr RPAREN
-#line 866 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[1].value.node);
-            }
-#line 1510 "parser.cpp"
-    break;
-
-  case 124: // opt_expr: expr
-#line 873 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1518 "parser.cpp"
-    break;
-
-  case 125: // opt_expr: %empty
-#line 877 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1526 "parser.cpp"
-    break;
-
-  case 126: // opt_expr_list: expr_list
-#line 884 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1534 "parser.cpp"
-    break;
-
-  case 127: // opt_expr_list: %empty
-#line 888 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1542 "parser.cpp"
-    break;
-
-  case 128: // expr_list: expr_list COMMA expr
-#line 895 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 951 "parser.cpp"
+    break;
+
+  case 53: // switch_case_list: switch_case
+#line 499 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 959 "parser.cpp"
+    break;
+
+  case 54: // switch_case: expr COLON code_block_or_stmt
+#line 506 "bnf.y"
+            {
+                (yylhs.value.node) = newSwitchCase((yystack_[2].value.node), (yystack_[0].value.node), false);
+            }
+#line 967 "parser.cpp"
+    break;
+
+  case 55: // switch_case: DEFAULT COLON code_block_or_stmt
+#line 510 "bnf.y"
+            {
+                (yylhs.value.node) = newSwitchCase(NULL, (yystack_[0].value.node), true);
+            }
+#line 975 "parser.cpp"
+    break;
+
+  case 56: // brk_stmt: BRK LPAREN expr RPAREN
+#line 517 "bnf.y"
+            {
+                (yylhs.value.node) = newBrkStmt((yystack_[1].value.node));
+            }
+#line 983 "parser.cpp"
+    break;
+
+  case 57: // brk_stmt: BRK
+#line 521 "bnf.y"
+            {
+                (yylhs.value.node) = newBrkStmt(NULL);
+            }
+#line 991 "parser.cpp"
+    break;
+
+  case 58: // if_stmt: IF LPAREN expr RPAREN code_block_or_stmt opt_else
+#line 528 "bnf.y"
+            {
+                (yylhs.value.node) = newIfStmt((yystack_[3].value.node), (yystack_[1].value.node), (yystack_[0].value.node));
+            }
+#line 999 "parser.cpp"
+    break;
+
+  case 59: // opt_else: ELSE code_block_or_stmt
+#line 535 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1007 "parser.cpp"
+    break;
+
+  case 60: // opt_else: %empty
+#line 539 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
+            }
+#line 1015 "parser.cpp"
+    break;
+
+  case 61: // toss_stmt: TOSS expr
+#line 546 "bnf.y"
+            {
+                (yylhs.value.node) = newTossStmt((yystack_[0].value.node));
+            }
+#line 1023 "parser.cpp"
+    break;
+
+  case 62: // op_assign: EQUALS
+#line 554 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1031 "parser.cpp"
+    break;
+
+  case 63: // op_assign: ASSIGN_ADD
+#line 558 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1039 "parser.cpp"
+    break;
+
+  case 64: // op_assign: ASSIGN_SUB
+#line 562 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1047 "parser.cpp"
+    break;
+
+  case 65: // op_assign: ASSIGN_DIV
+#line 566 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1055 "parser.cpp"
+    break;
+
+  case 66: // op_assign: ASSIGN_MUL
+#line 570 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1063 "parser.cpp"
+    break;
+
+  case 67: // op_assign: ASSIGN_MOD
+#line 574 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1071 "parser.cpp"
+    break;
+
+  case 68: // op_assign: ASSIGN_XOR
+#line 578 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1079 "parser.cpp"
+    break;
+
+  case 69: // op_assign: ASSIGN_SHIFTL
+#line 582 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1087 "parser.cpp"
+    break;
+
+  case 70: // op_assign: ASSIGN_SHIFTR
+#line 586 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1095 "parser.cpp"
+    break;
+
+  case 71: // op_assign: ASSIGN_AND
+#line 590 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1103 "parser.cpp"
+    break;
+
+  case 72: // op_assign: ASSIGN_OR
+#line 594 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1111 "parser.cpp"
+    break;
+
+  case 73: // op_logic: LOGIC_AND
+#line 601 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1119 "parser.cpp"
+    break;
+
+  case 74: // op_logic: LOGIC_OR
+#line 605 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1127 "parser.cpp"
+    break;
+
+  case 75: // op_cond: COND_GT
+#line 612 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1135 "parser.cpp"
+    break;
+
+  case 76: // op_cond: COND_GEQ
+#line 616 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1143 "parser.cpp"
+    break;
+
+  case 77: // op_cond: COND_LT
+#line 620 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1151 "parser.cpp"
+    break;
+
+  case 78: // op_cond: COND_LEQ
+#line 624 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1159 "parser.cpp"
+    break;
+
+  case 79: // op_cond: COND_EQ
+#line 628 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1167 "parser.cpp"
+    break;
+
+  case 80: // op_cond: COND_NEQ
+#line 632 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1175 "parser.cpp"
+    break;
+
+  case 81: // op_bitwise_xor: BIT_XOR
+#line 639 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1183 "parser.cpp"
+    break;
+
+  case 82: // op_bitwise_or: BIT_OR
+#line 646 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1191 "parser.cpp"
+    break;
+
+  case 83: // op_bitwise_and: BIT_AND
+#line 653 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1199 "parser.cpp"
+    break;
+
+  case 84: // op_bitwise_shift: BIT_SHIFTL
+#line 660 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1207 "parser.cpp"
+    break;
+
+  case 85: // op_bitwise_shift: BIT_SHIFTR
+#line 664 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1215 "parser.cpp"
+    break;
+
+  case 86: // op_arithm_add: PLUS
+#line 671 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1223 "parser.cpp"
+    break;
+
+  case 87: // op_arithm_add: MINUS
+#line 675 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1231 "parser.cpp"
+    break;
+
+  case 88: // op_arithm_mul: STAR
+#line 682 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1239 "parser.cpp"
+    break;
+
+  case 89: // op_arithm_mul: SLASH
+#line 686 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1247 "parser.cpp"
+    break;
+
+  case 90: // op_unary_neg: MINUS
+#line 693 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1255 "parser.cpp"
+    break;
+
+  case 91: // op_unary_logic_neg: BANG
+#line 700 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1263 "parser.cpp"
+    break;
+
+  case 92: // op_unary_inc: UNARY_DEC
+#line 707 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1271 "parser.cpp"
+    break;
+
+  case 93: // op_unary_inc: UNARY_INC
+#line 711 "bnf.y"
+            {
+                (yylhs.value.opType) = (yystack_[0].value.opType);
+            }
+#line 1279 "parser.cpp"
+    break;
+
+  case 94: // expr: lvl_logic
+#line 719 "bnf.y"
+            { 
+                (yylhs.value.node) = (yystack_[0].value.node); 
+            }
+#line 1287 "parser.cpp"
+    break;
+
+  case 95: // lvl_logic: lvl_logic op_logic lvl_cond
+#line 726 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1295 "parser.cpp"
+    break;
+
+  case 96: // lvl_logic: lvl_cond
+#line 730 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1303 "parser.cpp"
+    break;
+
+  case 97: // lvl_cond: lvl_cond op_cond lvl_bitwise_xor
+#line 737 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1311 "parser.cpp"
+    break;
+
+  case 98: // lvl_cond: lvl_bitwise_xor
+#line 741 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1319 "parser.cpp"
+    break;
+
+  case 99: // lvl_bitwise_xor: lvl_bitwise_xor op_bitwise_xor lvl_bitwise_or
+#line 748 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1327 "parser.cpp"
+    break;
+
+  case 100: // lvl_bitwise_xor: lvl_bitwise_or
+#line 752 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1335 "parser.cpp"
+    break;
+
+  case 101: // lvl_bitwise_or: lvl_bitwise_or op_bitwise_or lvl_bitwise_and
+#line 759 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1343 "parser.cpp"
+    break;
+
+  case 102: // lvl_bitwise_or: lvl_bitwise_and
+#line 763 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1351 "parser.cpp"
+    break;
+
+  case 103: // lvl_bitwise_and: lvl_bitwise_and op_bitwise_and lvl_bitwise_shift
+#line 770 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1359 "parser.cpp"
+    break;
+
+  case 104: // lvl_bitwise_and: lvl_bitwise_shift
+#line 774 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1367 "parser.cpp"
+    break;
+
+  case 105: // lvl_bitwise_shift: lvl_bitwise_shift op_bitwise_shift lvl_arithm_add
+#line 781 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1375 "parser.cpp"
+    break;
+
+  case 106: // lvl_bitwise_shift: lvl_arithm_add
+#line 785 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1383 "parser.cpp"
+    break;
+
+  case 107: // lvl_arithm_add: lvl_arithm_add op_arithm_add lvl_arithm_mul
+#line 792 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1391 "parser.cpp"
+    break;
+
+  case 108: // lvl_arithm_add: lvl_arithm_mul
+#line 796 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1399 "parser.cpp"
+    break;
+
+  case 109: // lvl_arithm_mul: lvl_arithm_mul op_arithm_mul lvl_unary_neg
+#line 803 "bnf.y"
+            {   
+                (yylhs.value.node) = newBinaryOp((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1407 "parser.cpp"
+    break;
+
+  case 110: // lvl_arithm_mul: lvl_unary_neg
+#line 807 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1415 "parser.cpp"
+    break;
+
+  case 111: // lvl_unary_neg: op_unary_neg lvl_unary_inc
+#line 814 "bnf.y"
+            {
+                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
+            }
+#line 1423 "parser.cpp"
+    break;
+
+  case 112: // lvl_unary_neg: op_unary_logic_neg lvl_unary_inc
+#line 818 "bnf.y"
+            {
+                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
+            }
+#line 1431 "parser.cpp"
+    break;
+
+  case 113: // lvl_unary_neg: lvl_unary_inc
+#line 822 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1439 "parser.cpp"
+    break;
+
+  case 114: // lvl_unary_inc: op_unary_inc lvl_postfix
+#line 829 "bnf.y"
+            {
+                (yylhs.value.node) = newUnaryPre((yystack_[1].value.opType), (yystack_[0].value.node));
+            }
+#line 1447 "parser.cpp"
+    break;
+
+  case 115: // lvl_unary_inc: lvl_postfix
+#line 833 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1455 "parser.cpp"
+    break;
+
+  case 116: // lvl_postfix: lvl_postfix DOT nameNode
+#line 840 "bnf.y"
+            {   
+                (yylhs.value.node) = newMemberAccess((yystack_[2].value.node), (yystack_[0].value.node));   
+            }
+#line 1463 "parser.cpp"
+    break;
+
+  case 117: // lvl_postfix: lvl_postfix LPAREN opt_expr_list RPAREN
+#line 844 "bnf.y"
+            {   
+                (yylhs.value.node) = newFnCall((yystack_[3].value.node), (yystack_[1].value.node));   
+            }
+#line 1471 "parser.cpp"
+    break;
+
+  case 118: // lvl_postfix: lvl_postfix LSQUARE opt_expr RSQUARE
+#line 848 "bnf.y"
+            {   
+                (yylhs.value.node) = newArrayAccess((yystack_[3].value.node), (yystack_[1].value.node));   
+            }
+#line 1479 "parser.cpp"
+    break;
+
+  case 119: // lvl_postfix: lvl_postfix op_unary_inc
+#line 852 "bnf.y"
+            {   
+                (yylhs.value.node) = newUnaryPost((yystack_[0].value.opType), (yystack_[1].value.node)); 
+            }
+#line 1487 "parser.cpp"
+    break;
+
+  case 120: // lvl_postfix: primary
+#line 856 "bnf.y"
+            {   
+                (yylhs.value.node) = (yystack_[0].value.node);    
+            }
+#line 1495 "parser.cpp"
+    break;
+
+  case 121: // primary: literal
+#line 863 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1503 "parser.cpp"
+    break;
+
+  case 122: // primary: nameNode
+#line 867 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1511 "parser.cpp"
+    break;
+
+  case 123: // primary: LPAREN expr RPAREN
+#line 871 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[1].value.node);
+            }
+#line 1519 "parser.cpp"
+    break;
+
+  case 124: // opt_expr: expr
+#line 878 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1527 "parser.cpp"
+    break;
+
+  case 125: // opt_expr: %empty
+#line 882 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
+            }
+#line 1535 "parser.cpp"
+    break;
+
+  case 126: // opt_expr_list: expr_list
+#line 889 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1543 "parser.cpp"
+    break;
+
+  case 127: // opt_expr_list: %empty
+#line 893 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
             }
 #line 1551 "parser.cpp"
     break;
 
-  case 129: // expr_list: expr
+  case 128: // expr_list: expr_list COMMA expr
 #line 900 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 1559 "parser.cpp"
-    break;
-
-  case 130: // literal: TRUE
-#line 907 "bnf.y"
-            { 
-                (yylhs.value.node) = newBoolValue(true); 
-            }
-#line 1567 "parser.cpp"
-    break;
-
-  case 131: // literal: FALSE
-#line 911 "bnf.y"
-            {
-                (yylhs.value.node) = newBoolValue(false);
-            }
-#line 1575 "parser.cpp"
-    break;
-
-  case 132: // literal: NUMBER
-#line 915 "bnf.y"
-            {
-                (yylhs.value.node) = newNumberValue((yystack_[0].value.numberValue));
-            }
-#line 1583 "parser.cpp"
-    break;
-
-  case 133: // literal: arr_initializer
-#line 919 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1591 "parser.cpp"
-    break;
-
-  case 134: // literal: STRING
-#line 923 "bnf.y"
-            {
-                (yylhs.value.node) = newStringValue((yystack_[0].value.stringValue));
-            }
-#line 1599 "parser.cpp"
-    break;
-
-  case 135: // arr_initializer: LSQUARE RSQUARE
-#line 931 "bnf.y"
-            {
-                (yylhs.value.node) = newArray(NULL);
-            }
-#line 1607 "parser.cpp"
-    break;
-
-  case 136: // arr_initializer: LSQUARE expr_list RSQUARE
-#line 935 "bnf.y"
-            {
-                (yylhs.value.node) = newArray((yystack_[1].value.node));
-            }
-#line 1615 "parser.cpp"
-    break;
-
-  case 137: // nameNode: NAME
-#line 943 "bnf.y"
-            {
-                (yylhs.value.node) = newName((yystack_[0].value.stringValue));
-            }
-#line 1623 "parser.cpp"
-    break;
-
-  case 138: // enum_stmt: ENUM nameNode LBRACE enum_opt_elements RBRACE
-#line 951 "bnf.y"
-            {
-                (yylhs.value.node) = newEnumDef((yystack_[3].value.node)->data.stringValue, (yystack_[1].value.node));
-            }
-#line 1631 "parser.cpp"
-    break;
-
-  case 139: // enum_element: delimiter_list nameNode
-#line 958 "bnf.y"
-            {
-                (yylhs.value.node) = newEnumElement((yystack_[0].value.node)->data.stringValue, NULL);
-            }
-#line 1639 "parser.cpp"
-    break;
-
-  case 140: // enum_element: delimiter_list nameNode EQUALS expr
-#line 962 "bnf.y"
-            {
-                (yylhs.value.node) = newEnumElement((yystack_[2].value.node)->data.stringValue, (yystack_[0].value.node));
-            }
-#line 1647 "parser.cpp"
-    break;
-
-  case 141: // enum_opt_elements: enum_elements
-#line 969 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1655 "parser.cpp"
-    break;
-
-  case 142: // enum_opt_elements: %empty
-#line 973 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1663 "parser.cpp"
-    break;
-
-  case 143: // enum_elements: enum_elements COMMA enum_element
-#line 980 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1560 "parser.cpp"
+    break;
+
+  case 129: // expr_list: expr
+#line 905 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 1568 "parser.cpp"
+    break;
+
+  case 130: // literal: TRUE
+#line 912 "bnf.y"
+            { 
+                (yylhs.value.node) = newBoolValue(true); 
+            }
+#line 1576 "parser.cpp"
+    break;
+
+  case 131: // literal: FALSE
+#line 916 "bnf.y"
+            {
+                (yylhs.value.node) = newBoolValue(false);
+            }
+#line 1584 "parser.cpp"
+    break;
+
+  case 132: // literal: NUMBER
+#line 920 "bnf.y"
+            {
+                (yylhs.value.node) = newNumberValue((yystack_[0].value.numberValue));
+            }
+#line 1592 "parser.cpp"
+    break;
+
+  case 133: // literal: arr_initializer
+#line 924 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1600 "parser.cpp"
+    break;
+
+  case 134: // literal: STRING
+#line 928 "bnf.y"
+            {
+                (yylhs.value.node) = newStringValue((yystack_[0].value.stringValue));
+            }
+#line 1608 "parser.cpp"
+    break;
+
+  case 135: // arr_initializer: LSQUARE RSQUARE
+#line 936 "bnf.y"
+            {
+                (yylhs.value.node) = newArray(NULL);
+            }
+#line 1616 "parser.cpp"
+    break;
+
+  case 136: // arr_initializer: LSQUARE expr_list RSQUARE
+#line 940 "bnf.y"
+            {
+                (yylhs.value.node) = newArray((yystack_[1].value.node));
+            }
+#line 1624 "parser.cpp"
+    break;
+
+  case 137: // nameNode: NAME
+#line 948 "bnf.y"
+            {
+                (yylhs.value.node) = newName((yystack_[0].value.stringValue));
+            }
+#line 1632 "parser.cpp"
+    break;
+
+  case 138: // enum_stmt: ENUM nameNode LBRACE enum_opt_elements RBRACE
+#line 956 "bnf.y"
+            {
+                (yylhs.value.node) = newEnumDef((yystack_[3].value.node)->data.stringValue, (yystack_[1].value.node));
+            }
+#line 1640 "parser.cpp"
+    break;
+
+  case 139: // enum_element: delimiter_list nameNode
+#line 963 "bnf.y"
+            {
+                (yylhs.value.node) = newEnumElement((yystack_[0].value.node)->data.stringValue, NULL);
+            }
+#line 1648 "parser.cpp"
+    break;
+
+  case 140: // enum_element: delimiter_list nameNode EQUALS expr
+#line 967 "bnf.y"
+            {
+                (yylhs.value.node) = newEnumElement((yystack_[2].value.node)->data.stringValue, (yystack_[0].value.node));
+            }
+#line 1656 "parser.cpp"
+    break;
+
+  case 141: // enum_opt_elements: enum_elements
+#line 974 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1664 "parser.cpp"
+    break;
+
+  case 142: // enum_opt_elements: %empty
+#line 978 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
             }
 #line 1672 "parser.cpp"
     break;
 
-  case 144: // enum_elements: enum_element
+  case 143: // enum_elements: enum_elements COMMA enum_element
 #line 985 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 1680 "parser.cpp"
-    break;
-
-  case 145: // fn_parameter: nameNode nameNode
-#line 993 "bnf.y"
-            {
-                (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
-            }
-#line 1688 "parser.cpp"
-    break;
-
-  case 146: // fn_parameter: var_type nameNode
-#line 997 "bnf.y"
-            {
-                (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
-            }
-#line 1696 "parser.cpp"
-    break;
-
-  case 147: // fn_opt_params_list: fn_params_list
-#line 1004 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1704 "parser.cpp"
-    break;
-
-  case 148: // fn_opt_params_list: %empty
-#line 1008 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1712 "parser.cpp"
-    break;
-
-  case 149: // fn_params_list: fn_params_list COMMA fn_parameter
-#line 1015 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1681 "parser.cpp"
+    break;
+
+  case 144: // enum_elements: enum_element
+#line 990 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 1689 "parser.cpp"
+    break;
+
+  case 145: // fn_parameter: nameNode nameNode
+#line 998 "bnf.y"
+            {
+                (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
+            }
+#line 1697 "parser.cpp"
+    break;
+
+  case 146: // fn_parameter: var_type nameNode
+#line 1002 "bnf.y"
+            {
+                (yylhs.value.node) = newParamInfo((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.node));
+            }
+#line 1705 "parser.cpp"
+    break;
+
+  case 147: // fn_opt_params_list: fn_params_list
+#line 1009 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1713 "parser.cpp"
+    break;
+
+  case 148: // fn_opt_params_list: %empty
+#line 1013 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
             }
 #line 1721 "parser.cpp"
     break;
 
-  case 150: // fn_params_list: fn_parameter
+  case 149: // fn_params_list: fn_params_list COMMA fn_parameter
 #line 1020 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 1729 "parser.cpp"
-    break;
-
-  case 151: // fn_def: FN nameNode LPAREN fn_opt_params_list RPAREN code_block
-#line 1027 "bnf.y"
-            {
-                (yylhs.value.node) = newFnDef((yystack_[4].value.node)->data.stringValue, (yystack_[2].value.node), (yystack_[0].value.node));
-            }
-#line 1737 "parser.cpp"
-    break;
-
-  case 152: // var_decl: VAR var_decl_assign_list
-#line 1035 "bnf.y"
-            {
-                (yylhs.value.node) = newVarDeclBatch((yystack_[0].value.node));
-            }
-#line 1745 "parser.cpp"
-    break;
-
-  case 153: // var_decl_assign_list: var_decl_assign_list COMMA var_decl_assign
-#line 1042 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1730 "parser.cpp"
+    break;
+
+  case 150: // fn_params_list: fn_parameter
+#line 1025 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 1738 "parser.cpp"
+    break;
+
+  case 151: // fn_def: FN nameNode LPAREN fn_opt_params_list RPAREN code_block
+#line 1032 "bnf.y"
+            {
+                (yylhs.value.node) = newFnDef((yystack_[4].value.node)->data.stringValue, (yystack_[2].value.node), (yystack_[0].value.node));
+            }
+#line 1746 "parser.cpp"
+    break;
+
+  case 152: // var_decl: VAR var_decl_assign_list
+#line 1040 "bnf.y"
+            {
+                (yylhs.value.node) = newVarDeclBatch((yystack_[0].value.node));
             }
 #line 1754 "parser.cpp"
     break;
 
-  case 154: // var_decl_assign_list: var_decl_assign
+  case 153: // var_decl_assign_list: var_decl_assign_list COMMA var_decl_assign
 #line 1047 "bnf.y"
-            {
-                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
-            }
-#line 1762 "parser.cpp"
-    break;
-
-  case 155: // var_decl_assign: var_decl_modifiers nameNode EQUALS expr
-#line 1054 "bnf.y"
-            {
-                (yylhs.value.node) = newVarDecl((yystack_[2].value.node)->data.stringValue, (yystack_[3].value.modifier), (yystack_[0].value.node));
-            }
-#line 1770 "parser.cpp"
-    break;
-
-  case 156: // var_decl_assign: var_decl_modifiers nameNode
-#line 1058 "bnf.y"
-            {
-                (yylhs.value.node) = newVarDecl((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.modifier), NULL);
-            }
-#line 1778 "parser.cpp"
-    break;
-
-  case 157: // var_decl_modifiers: var_decl_modifiers var_decl_modifier
-#line 1065 "bnf.y"
-            {
-                (yylhs.value.modifier) = static_cast<Modifier>(to_underlying((yystack_[1].value.modifier)) | to_underlying((yystack_[0].value.modifier)));
-            }
-#line 1786 "parser.cpp"
-    break;
-
-  case 158: // var_decl_modifiers: %empty
-#line 1069 "bnf.y"
-            {
-                (yylhs.value.modifier) = Modifier::None;
-            }
-#line 1794 "parser.cpp"
-    break;
-
-  case 159: // var_decl_modifier: CONST
-#line 1076 "bnf.y"
-            {
-                (yylhs.value.modifier) = (yystack_[0].value.modifier);
-            }
-#line 1802 "parser.cpp"
-    break;
-
-  case 160: // var_decl_modifier: LOCAL
-#line 1080 "bnf.y"
-            {
-                (yylhs.value.modifier) = (yystack_[0].value.modifier);
-            }
-#line 1810 "parser.cpp"
-    break;
-
-  case 161: // var_type: VAR
-#line 1087 "bnf.y"
-            {
-                (yylhs.value.node) = newName("var");
-            }
-#line 1818 "parser.cpp"
-    break;
-
-  case 162: // assign: expr op_assign assign_rhs
-#line 1095 "bnf.y"
-            {
-                (yylhs.value.node) = newVarAssign((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));
-            }
-#line 1826 "parser.cpp"
-    break;
-
-  case 163: // assign_rhs: expr
-#line 1102 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1834 "parser.cpp"
-    break;
-
-  case 164: // class_def: CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list opt_delimiter_list RBRACE
-#line 1149 "bnf.y"
-            {
-                (yylhs.value.node) = newClassDef((yystack_[5].value.node)->data.stringValue, (yystack_[2].value.node));
-            }
-#line 1842 "parser.cpp"
-    break;
-
-  case 165: // opt_class_member_list: class_member_list
-#line 1156 "bnf.y"
-            {
-                (yylhs.value.node) = (yystack_[0].value.node);
-            }
-#line 1850 "parser.cpp"
-    break;
-
-  case 166: // opt_class_member_list: %empty
-#line 1160 "bnf.y"
-            {
-                (yylhs.value.node) = NULL;
-            }
-#line 1858 "parser.cpp"
-    break;
-
-  case 167: // class_member_list: class_member_list delimiter_list class_member
-#line 1167 "bnf.y"
             {
                 astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
                 (yylhs.value.node) = (yystack_[2].value.node);
             }
-#line 1867 "parser.cpp"
+#line 1763 "parser.cpp"
     break;
 
-  case 168: // class_member_list: class_member
-#line 1172 "bnf.y"
+  case 154: // var_decl_assign_list: var_decl_assign
+#line 1052 "bnf.y"
             {
                 (yylhs.value.node) = newNodeList((yystack_[0].value.node));
             }
-#line 1875 "parser.cpp"
+#line 1771 "parser.cpp"
     break;
 
-  case 169: // class_member: class_member_mod_list var_type nameNode
-#line 1179 "bnf.y"
+  case 155: // var_decl_assign: var_decl_modifiers nameNode EQUALS expr
+#line 1059 "bnf.y"
             {
-                (yylhs.value.node) = newClassFieldDef((yystack_[0].value.node)->data.stringValue, (yystack_[2].value.modifier), (yystack_[1].value.node));
+                (yylhs.value.node) = newVarDecl((yystack_[2].value.node)->data.stringValue, (yystack_[3].value.modifier), (yystack_[0].value.node));
             }
-#line 1883 "parser.cpp"
+#line 1779 "parser.cpp"
     break;
 
-  case 170: // class_member: class_member_mod_list fn_def
-#line 1183 "bnf.y"
+  case 156: // var_decl_assign: var_decl_modifiers nameNode
+#line 1063 "bnf.y"
             {
-                (yylhs.value.node) = newClassMethodDef((yystack_[1].value.modifier), (yystack_[0].value.node));
+                (yylhs.value.node) = newVarDecl((yystack_[0].value.node)->data.stringValue, (yystack_[1].value.modifier), NULL);
             }
-#line 1891 "parser.cpp"
+#line 1787 "parser.cpp"
     break;
 
-  case 171: // class_member_mod_list: class_member_mod_list class_member_mod
-#line 1225 "bnf.y"
+  case 157: // var_decl_modifiers: var_decl_modifiers var_decl_modifier
+#line 1070 "bnf.y"
             {
-                (yylhs.value.modifier) = static_cast<Modifier>(static_cast<uint16_t>((yystack_[1].value.modifier)) | static_cast<uint16_t>((yystack_[0].value.modifier)));
+                (yylhs.value.modifier) = static_cast<Modifier>(to_underlying((yystack_[1].value.modifier)) | to_underlying((yystack_[0].value.modifier)));
             }
-#line 1899 "parser.cpp"
+#line 1795 "parser.cpp"
     break;
 
-  case 172: // class_member_mod_list: %empty
-#line 1229 "bnf.y"
+  case 158: // var_decl_modifiers: %empty
+#line 1074 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::None;
             }
-#line 1907 "parser.cpp"
+#line 1803 "parser.cpp"
+    break;
+
+  case 159: // var_decl_modifier: CONST
+#line 1081 "bnf.y"
+            {
+                (yylhs.value.modifier) = (yystack_[0].value.modifier);
+            }
+#line 1811 "parser.cpp"
+    break;
+
+  case 160: // var_decl_modifier: LOCAL
+#line 1085 "bnf.y"
+            {
+                (yylhs.value.modifier) = (yystack_[0].value.modifier);
+            }
+#line 1819 "parser.cpp"
+    break;
+
+  case 161: // var_type: VAR
+#line 1092 "bnf.y"
+            {
+                (yylhs.value.node) = newName("var");
+            }
+#line 1827 "parser.cpp"
+    break;
+
+  case 162: // assign: expr op_assign assign_rhs
+#line 1100 "bnf.y"
+            {
+                (yylhs.value.node) = newVarAssign((yystack_[1].value.opType), (yystack_[2].value.node), (yystack_[0].value.node));
+            }
+#line 1835 "parser.cpp"
+    break;
+
+  case 163: // assign_rhs: expr
+#line 1107 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1843 "parser.cpp"
+    break;
+
+  case 164: // class_def: CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list opt_delimiter_list RBRACE
+#line 1154 "bnf.y"
+            {
+                (yylhs.value.node) = newClassDef((yystack_[5].value.node)->data.stringValue, (yystack_[2].value.node));
+            }
+#line 1851 "parser.cpp"
+    break;
+
+  case 165: // opt_class_member_list: class_member_list
+#line 1161 "bnf.y"
+            {
+                (yylhs.value.node) = (yystack_[0].value.node);
+            }
+#line 1859 "parser.cpp"
+    break;
+
+  case 166: // opt_class_member_list: %empty
+#line 1165 "bnf.y"
+            {
+                (yylhs.value.node) = NULL;
+            }
+#line 1867 "parser.cpp"
+    break;
+
+  case 167: // class_member_list: class_member_list delimiter_list class_member
+#line 1172 "bnf.y"
+            {
+                astNodeLLAppend((yystack_[2].value.node), (yystack_[0].value.node));
+                (yylhs.value.node) = (yystack_[2].value.node);
+            }
+#line 1876 "parser.cpp"
+    break;
+
+  case 168: // class_member_list: class_member
+#line 1177 "bnf.y"
+            {
+                (yylhs.value.node) = newNodeList((yystack_[0].value.node));
+            }
+#line 1884 "parser.cpp"
+    break;
+
+  case 169: // class_member: class_member_mod_list var_type nameNode
+#line 1184 "bnf.y"
+            {
+                (yylhs.value.node) = newClassFieldDef((yystack_[0].value.node)->data.stringValue, (yystack_[2].value.modifier), (yystack_[1].value.node));
+            }
+#line 1892 "parser.cpp"
+    break;
+
+  case 170: // class_member: class_member_mod_list fn_def
+#line 1188 "bnf.y"
+            {
+                (yylhs.value.node) = newClassMethodDef((yystack_[1].value.modifier), (yystack_[0].value.node));
+            }
+#line 1900 "parser.cpp"
+    break;
+
+  case 171: // class_member_mod_list: class_member_mod_list class_member_mod
+#line 1230 "bnf.y"
+            {
+                (yylhs.value.modifier) = static_cast<Modifier>(static_cast<uint16_t>((yystack_[1].value.modifier)) | static_cast<uint16_t>((yystack_[0].value.modifier)));
+            }
+#line 1908 "parser.cpp"
+    break;
+
+  case 172: // class_member_mod_list: %empty
+#line 1234 "bnf.y"
+            {
+                (yylhs.value.modifier) = Modifier::None;
+            }
+#line 1916 "parser.cpp"
     break;
 
   case 173: // class_member_mod: HIDDEN
-#line 1236 "bnf.y"
+#line 1241 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Hidden;
             }
-#line 1915 "parser.cpp"
+#line 1924 "parser.cpp"
     break;
 
   case 174: // class_member_mod: CONST
-#line 1240 "bnf.y"
+#line 1245 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Const;
             }
-#line 1923 "parser.cpp"
+#line 1932 "parser.cpp"
     break;
 
   case 175: // class_member_mod: STATIC
-#line 1244 "bnf.y"
+#line 1249 "bnf.y"
             {
                 (yylhs.value.modifier) = Modifier::Static;
             }
-#line 1931 "parser.cpp"
+#line 1940 "parser.cpp"
     break;
 
 
-#line 1935 "parser.cpp"
+#line 1944 "parser.cpp"
 
             default:
               break;
@@ -2443,24 +2452,24 @@ namespace yy {
   const short
   parser::yyrline_[] =
   {
-       0,   223,   223,   230,   231,   235,   236,   240,   244,   251,
-     256,   263,   267,   275,   282,   286,   290,   298,   305,   309,
-     313,   317,   321,   329,   336,   341,   348,   347,   359,   363,
-     364,   368,   372,   380,   388,   392,   396,   400,   404,   408,
-     412,   419,   426,   433,   440,   445,   452,   459,   463,   470,
-     477,   482,   488,   493,   500,   504,   511,   515,   522,   529,
-     533,   540,   548,   552,   556,   560,   564,   568,   572,   576,
-     580,   584,   588,   595,   599,   606,   610,   614,   618,   622,
-     626,   633,   640,   647,   654,   658,   665,   669,   676,   680,
-     687,   694,   701,   705,   713,   720,   724,   731,   735,   742,
-     746,   753,   757,   764,   768,   775,   779,   786,   790,   797,
-     801,   808,   812,   816,   823,   827,   834,   838,   842,   846,
-     850,   857,   861,   865,   872,   877,   883,   888,   894,   899,
-     906,   910,   914,   918,   922,   930,   934,   942,   950,   957,
-     961,   968,   973,   979,   984,   992,   996,  1003,  1008,  1014,
-    1019,  1026,  1034,  1041,  1046,  1053,  1057,  1064,  1069,  1075,
-    1079,  1086,  1094,  1101,  1148,  1155,  1160,  1166,  1171,  1178,
-    1182,  1224,  1229,  1235,  1239,  1243
+       0,   228,   228,   235,   236,   240,   241,   245,   249,   256,
+     261,   268,   272,   280,   287,   291,   295,   303,   310,   314,
+     318,   322,   326,   334,   341,   346,   353,   352,   364,   368,
+     369,   373,   377,   385,   393,   397,   401,   405,   409,   413,
+     417,   424,   431,   438,   445,   450,   457,   464,   468,   475,
+     482,   487,   493,   498,   505,   509,   516,   520,   527,   534,
+     538,   545,   553,   557,   561,   565,   569,   573,   577,   581,
+     585,   589,   593,   600,   604,   611,   615,   619,   623,   627,
+     631,   638,   645,   652,   659,   663,   670,   674,   681,   685,
+     692,   699,   706,   710,   718,   725,   729,   736,   740,   747,
+     751,   758,   762,   769,   773,   780,   784,   791,   795,   802,
+     806,   813,   817,   821,   828,   832,   839,   843,   847,   851,
+     855,   862,   866,   870,   877,   882,   888,   893,   899,   904,
+     911,   915,   919,   923,   927,   935,   939,   947,   955,   962,
+     966,   973,   978,   984,   989,   997,  1001,  1008,  1013,  1019,
+    1024,  1031,  1039,  1046,  1051,  1058,  1062,  1069,  1074,  1080,
+    1084,  1091,  1099,  1106,  1153,  1160,  1165,  1171,  1176,  1183,
+    1187,  1229,  1234,  1240,  1244,  1248
   };
 
   void
@@ -2545,6 +2554,6 @@ namespace yy {
   }
 
 } // yy
-#line 2549 "parser.cpp"
+#line 2558 "parser.cpp"
 
-#line 1249 "bnf.y"
+#line 1254 "bnf.y"
