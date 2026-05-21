@@ -1,5 +1,5 @@
-#include "ast.h"
-#include "lexer.h"
+#include "front/ast.h"
+#include "front/lexer.h"
 #include "shared.h"
 #include <array>
 #include <stdlib.h>
@@ -10,7 +10,7 @@ static constexpr std::array<const char*,
                             static_cast<size_t>(ASTNodeType::_COUNT)>
   _nodeTypeStr = {
 #define X(Name) #Name,
-#include "ast_nodetypes.def"
+#include "front/ast_nodetypes.def"
 #undef X
   };
 
@@ -18,7 +18,7 @@ static constexpr std::array<const char*,
 static constexpr std::array<const char*, static_cast<size_t>(OpType::_COUNT)>
   _opTypeStr = {
 #define X(Name, Op, ...) #Op,
-#include "ast_optypes.def"
+#include "front/ast_optypes.def"
 #undef X
   };
 

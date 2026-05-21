@@ -20,13 +20,13 @@ enum class TokenType : uint16_t
 #undef X2
 };
 
-typedef struct
+struct Token
 {
   const char* str = nullptr;
   TokenType type = TokenType::ERROR;
   size_t line = 0;
   size_t col = 0;
-} Token;
+};
 
 // TODO: implement error messaging and tie to diag
 enum class LexerError : ErrorCode

@@ -1,4 +1,4 @@
-#include "dfalg_out.h"
+#include "front/dfalg_out.h"
 #define ROWS_COUNT 5
 #define COLS_COUNT 11
 static DFALG_AcceptingType stateTypes[] = { ERROR, NUMBER, NUMBER, ERROR, NUMBER, };

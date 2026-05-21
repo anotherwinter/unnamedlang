@@ -1,5 +1,5 @@
 #pragma once
-#include "shared.h"
+#include "../shared.h"
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -11,6 +11,7 @@ struct TypeID
 {
   using __TypeID = uint32_t;
   static constexpr __TypeID dynamicID = 0;
+  static constexpr __TypeID invalidID = std::numeric_limits<__TypeID>::max();
   __TypeID val = dynamicID;
 
   inline bool operator==(const TypeID& other) const { return val == other.val; }

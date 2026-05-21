@@ -1,11 +1,8 @@
-#include "typedast.h"
-#include "shared.h"
-#include "symbolregistry.h"
-#include "typedastanalyzer.h"
-#include "typedastbuilder.h"
+#include "front/typedast.h"
+#include "front/symbolregistry.h"
+#include "front/typedastanalyzer.h"
+#include "front/typedastbuilder.h"
 #include <cstdio>
-#include <memory>
-#include <variant>
 
 using namespace HIR;
 
@@ -247,12 +244,13 @@ TypedAST::print(const TypedNode* node, int indent)
       [&](const MemberAccess& membAccess) {
         printIndent(nextIndent);
         printf("base:\n");
-        // TODO: adapt this to variant
-        print(std::get<TypedNode*>(membAccess.base), nextIndent + 2);
+        print(membAccess.base, nextIndent + 2);
 
-        printIndent(nextIndent);
-        printf("member:\n");
-        print(std::get<TypedNode*>(membAccess.memb), nextIndent + 2);
+        for (auto& m : membAccess.memb) {
+          printIndent(nextIndent);
+          printf("member:\n");
+          print(m, nextIndent + 2);
+        }
       },
       [&](const ArrayAccess& arrAccess) {
         printIndent(nextIndent);

@@ -1,8 +1,6 @@
-#include "typedastbuilder.h"
-#include "../front/ast.h"
-#include "symbolregistry.h"
-#include "typedast.h"
-#include <variant>
+#include "front/typedastbuilder.h"
+#include "front/ast.h"
+#include "front/typedast.h"
 
 using namespace HIR;
 
@@ -82,6 +80,11 @@ TypedASTBuilder::allocTypedNode(const ASTNode* node)
   }
 
   void* raw = _arena.alloc(sizeof(TypedNode), alignof(TypedNode));
+  if (!raw) {
+    _diag.putMsg(STUB_ERR, node->line, node->col);
+    return nullptr;
+  }
+
   TypedNode* n = new (raw) TypedNode{ T{}, node->line, node->col };
 
   return n;
@@ -365,8 +368,16 @@ TypedASTBuilder::buildMemberAccess(const ASTNode* node)
   TypedNode* n = allocTypedNode<MemberAccess>(node);
   auto& membAccess = std::get<MemberAccess>(n->node);
 
-  membAccess.base = buildFromAST(node->data.memberAccess.left);
-  membAccess.memb = buildFromAST(node->data.memberAccess.right);
+  auto left = node;
+  std::vector<TypedNode*> nodes;
+  while (left->type == NODE_MEMBER_ACCESS) {
+    nodes.push_back(buildFromAST(left->data.memberAccess.right));
+    left = left->data.memberAccess.left;
+  }
+
+  membAccess.base = buildFromAST(left);
+  for (auto it = nodes.rbegin(); it != nodes.rend(); ++it)
+    membAccess.memb.push_back(*it);
 
   return n;
 }

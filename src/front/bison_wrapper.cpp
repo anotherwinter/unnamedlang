@@ -1,5 +1,5 @@
-#include "bison_wrapper.h"
-#include "lexer.h"
+#include "front/bison_wrapper.h"
+#include "front/lexer.h"
 #include <stdlib.h>
 
 namespace yy {

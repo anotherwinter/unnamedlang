@@ -1,6 +1,6 @@
-#include "symbolregistry.h"
-#include "../diagnostics.h"
-#include "scope.h"
+#include "front/symbolregistry.h"
+#include "diagnostics.h"
+#include "front/scope.h"
 #include <algorithm>
 
 SymbolRegistry::SymbolRegistry(Diagnostics& diag)
@@ -127,6 +127,10 @@ SymbolRegistry::resolveFunctionName(const std::string& name)
     return {};
 
   auto fnNameID = it->second;
+
+  // TODO: add map that will contain fnnameid as key and vector of FnNameResolution as value
+  // that way we can avoid iterating over scopes and just try to get last resolution
+  // from vector if given fnnameid exists in map
 
   // resolve in owner scopes
   for (auto& s : _scopes) {

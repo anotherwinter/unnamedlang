@@ -1,6 +1,5 @@
 #pragma once
 #include "ast.h"
-#include "shared.h"
 #include "symbolregistry.h"
 #include <array>
 #include <cstddef>
@@ -70,16 +69,15 @@ struct CallExpr
 {
   enum class ResolutionType
   {
-    Unresolved,
     Static,
     Dynamic,
     Error,
   };
 
-  ResolutionType resType = ResolutionType::Unresolved;
+  ResolutionType resType = ResolutionType::Dynamic;
 
   TypedNode* callee = nullptr; // valid always, except for error
-  FnResolution fnRes;          // valid if static resolving
+  FnResolution fnRes = {};     // valid if static resolving
 
   // after pass1 every call is unresolved, so callee node contains only other
   // nodes after pass1
@@ -112,6 +110,7 @@ struct VarDecl
   const char* name;
   Modifier mod = {};
   TypeID type = {};
+  VarID id = {};
   TypedNode* val;
 };
 
@@ -187,24 +186,17 @@ struct UnaryExpr
   TypeID type = {};
 };
 
-struct MemberAccess
-{
-  std::variant<TypedNode*,    // unresolved
-               VarResolution, // variable / field
-               FunctionID     // method
-               >
-    base;
-  std::variant<TypedNode*, // unresolved
-               VarID,      // field
-               FunctionID  // method
-               >
-    memb;
-};
-
 struct ArrayAccess
 {
   TypedNode* base;
   TypedNode* index;
+};
+
+struct MemberAccess
+{
+  TypedNode* base;
+  std::vector<TypedNode*> memb;
+  bool resolved = false;
 };
 
 struct BoolVal

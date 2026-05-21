@@ -16,6 +16,11 @@ add_library(core
     ../src/front/scope.cpp
 )
 
+target_include_directories(core
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+)
+
 target_compile_definitions(core PRIVATE DBG)
 
 add_executable(test_lexer test_lexer.cpp)

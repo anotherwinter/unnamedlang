@@ -14,7 +14,7 @@ struct NameResolutionResult
   std::variant<std::monostate,
                TypeID,        // holds class id
                FnNameID,      // holds fnnameid
-               FunctionID,    // holds functionid
+               FnResolution,  // holds functionid
                VarResolution, // holds varid for var / field
                TypedNode      // unresolved
                >
@@ -89,8 +89,8 @@ private:
 
     if (auto varRes = std::get_if<VarResolution>(&res.res))
       return varRes->varInfo.type;
-    else if (auto fnIDRes = std::get_if<FunctionID>(&res.res))
-      return _reg.resolveFunction(*fnIDRes)->returnType;
+    else if (auto fnRes = std::get_if<FnResolution>(&res.res))
+      return fnRes->returnType;
 
     return {};
   }

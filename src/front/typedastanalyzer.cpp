@@ -1,8 +1,6 @@
-#include "typedastanalyzer.h"
-#include "..//diagnostics.h"
-#include "shared.h"
-#include "symbolregistry.h"
-#include "typedast.h"
+#include "front/typedastanalyzer.h"
+#include "front/symbolregistry.h"
+#include "front/typedast.h"
 #include <variant>
 
 using namespace HIR;
@@ -137,8 +135,10 @@ TypedASTAnalyzer::analyzeVarDecl(const TypedNode* node)
   // if variable is already declared in current scope
   if (isValid(curScopeRes))
     _diag.putMsg(STUB_ERR, node->line, node->col);
-  else
-    VarID var = _reg.declareVariable(varDecl.name, varDecl.type, varDecl.mod);
+  else {
+    VarID id = _reg.declareVariable(varDecl.name, varDecl.type, varDecl.mod);
+    varDecl.id = id;
+  }
 
   analyzeTypedNode(varDecl.val);
   auto valType = inferType(varDecl.val);
@@ -363,7 +363,7 @@ TypedASTAnalyzer::resolveCallExpr(CallExpr& callExpr)
 {
   // if already resolved
   if (callExpr.resType == CallExpr::ResolutionType::Static)
-    return { {}, callExpr.fnRes.returnType, callExpr.fnRes.id, true };
+    return { {}, callExpr.fnRes.returnType, callExpr.fnRes, true };
 
   auto calleeRes = resolve(callExpr.callee);
   auto fnNameID = std::get_if<FnNameID>(&calleeRes.res);
@@ -386,42 +386,32 @@ TypedASTAnalyzer::resolveCallExpr(CallExpr& callExpr)
   callExpr.resType = CallExpr::ResolutionType::Static;
   callExpr.fnRes = fnRes;
 
-  return { calleeRes.ownerID, fnRes.returnType, fnRes.id, true };
+  return { calleeRes.ownerID, fnRes.returnType, fnRes, true };
 }
 
 NameResolutionResult
 TypedASTAnalyzer::resolveMemberAccess(MemberAccess& membAccess)
 {
-  // if base already resolved, dont try to resolve
-  if (!std::holds_alternative<TypedNode*>(membAccess.base)) {
-    _diag.putMsg(STUB_ERR, 0, 0);
-    return {};
-  }
-
-  auto left = resolve(std::get<TypedNode*>(membAccess.base));
+  auto left = resolve(membAccess.base);
   if (!left.resolved || !isValid(left.type))
     return {};
 
-  _reg.pushScope(left.type);
-  NameResolutionResult rightRes =
-    std::visit(Overloaded{
-                 [&](TypedNode* node) { return resolve(node); },
-                 [&](auto&&) {
-                   _diag.putMsg(STUB_ERR, 0, 0);
-                   return NameResolutionResult{};
-                 },
-               },
-               membAccess.memb);
-  _reg.popScope();
+  auto membOwnerType = left.type;
+  NameResolutionResult right;
+  bool resolved = true;
+  for (auto& m : membAccess.memb) {
+    _reg.pushScope(membOwnerType);
+    right = resolve(m);
+    if (!right.resolved)
+      resolved = false;
 
-  if (auto varRes = std::get_if<VarResolution>(&rightRes.res))
-    membAccess.memb = varRes->varInfo.id;
-  else if (auto fnIDRes = std::get_if<FunctionID>(&rightRes.res))
-    membAccess.memb = *fnIDRes;
+    _reg.popScope();
 
-  rightRes.ownerID = left.type;
+    membOwnerType = right.type;
+  }
 
-  return rightRes;
+  membAccess.resolved = resolved;
+  return right;
 }
 
 NameResolutionResult
@@ -541,32 +531,12 @@ TypedASTAnalyzer::typeOfUnaryExpr(UnaryExpr& unary)
 TypeID
 TypedASTAnalyzer::typeOfMemberAccess(MemberAccess& membAccess)
 {
-  TypeID ownerID;
-  if (std::holds_alternative<TypedNode*>(membAccess.base)) {
-    auto baseRes = resolve(std::get<TypedNode*>(membAccess.base));
-    if (!baseRes.resolved)
-      return {};
-
-    ownerID = baseRes.ownerID;
-  } else if (auto varInfoRes = std::get_if<VarResolution>(&membAccess.base))
-    ownerID = varInfoRes->ownerID;
-  else if (auto fnIDRes = std::get_if<FunctionID>(&membAccess.base))
-    ownerID = _reg.resolveFunction(*fnIDRes)->returnType;
+  auto baseRes = resolve(membAccess.base);
+  auto ownerID = baseRes.type;
 
   // if member access was already statically resolved
-  if (auto varIDRes = std::get_if<VarID>(&membAccess.memb))
-    return _reg.resolveField(*varIDRes, ownerID)->type;
-  else if (auto fnIDRes = std::get_if<FunctionID>(&membAccess.base))
-    return _reg.resolveFunction(*fnIDRes)->returnType;
-
-  auto membRes = resolve(std::get<TypedNode*>(membAccess.memb));
-  if (!membRes.resolved)
-    return {};
-
-  if (auto varRes = std::get_if<VarResolution>(&membRes.res))
-    return varRes->varInfo.type;
-  else if (auto fnIDRes = std::get_if<FunctionID>(&membRes.res))
-    return _reg.resolveFunction(*fnIDRes)->returnType;
+  if (membAccess.resolved)
+    return inferType(membAccess.memb.back());
 
   return {};
 }
@@ -612,8 +582,8 @@ TypedASTAnalyzer::typeOfName(NameExpr& nameExpr)
 
     if (auto varRes = std::get_if<VarResolution>(&res.res))
       return varRes->varInfo.type;
-    else if (auto fnIDRes = std::get_if<FunctionID>(&res.res))
-      return _reg.resolveFunction(*fnIDRes)->returnType;
+    else if (auto fnRes = std::get_if<FnResolution>(&res.res))
+      return fnRes->returnType;
   }
 
   // only resolve type of variable since we cant resolve function knowing only

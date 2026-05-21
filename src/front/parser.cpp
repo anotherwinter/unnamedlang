@@ -40,14 +40,14 @@
 #line 27 "bnf.y"
 
 #include <stdio.h>
-#include "bison_wrapper.h"
+#include "front/bison_wrapper.h"
 
 ASTNode* astRoot = NULL;
 
 #line 48 "parser.cpp"
 
 
-#include "parser.hpp"
+#include "front/parser.hpp"
 
 
 

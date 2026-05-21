@@ -8,6 +8,7 @@ class ArenaAlloc
   {
     // buffer
     char* _begin;
+    
     // current offset into buffer
     size_t _offset;
 

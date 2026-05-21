@@ -1,5 +1,5 @@
-#include "lexer.h"
-#include "dfalg_out.h"
+#include "front/lexer.h"
+#include "front/dfalg_out.h"
 
 Lexer::Lexer(Diagnostics& diag)
   : _diag(diag)

@@ -1,5 +1,5 @@
-#include "scope.h"
-#include "symbolregistry.h"
+#include "front/scope.h"
+#include "front/symbolregistry.h"
 
 Scope::Scope(TypeID ownerID)
   : _ownerID(ownerID)
