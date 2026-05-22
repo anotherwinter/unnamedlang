@@ -7,6 +7,10 @@ int
 yylex(parser::value_type* yylval, Lexer& lexer)
 {
   Token tok = lexer.lexer();
+  // skip comment tokens
+  while (tok.type == TokenType::COMMENT)
+    tok = lexer.lexer();
+
   switch (tok.type) {
     case TokenType::STRING:
       yylval->stringValue = tok.str;

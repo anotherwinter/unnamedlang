@@ -1,5 +1,5 @@
 #pragma once
-#include "lexer.h"
+#include "front/lexer.h"
 #include <cstdint>
 #include <stdbool.h>
 
@@ -12,7 +12,7 @@ enum class OpType : uint16_t
 #define GET_X(_1, _2, _3, NAME, ...) NAME
 
 #define X(...) GET_X(__VA_ARGS__, X3, X2)(__VA_ARGS__)
-#include "ast_optypes.def"
+#include "front/ast_optypes.def"
 #undef X
 #undef GET_X
 #undef X2
@@ -24,7 +24,7 @@ enum class ASTNodeType : uint16_t
 {
 #define X(Name) Name,
 
-#include "ast_nodetypes.def"
+#include "front/ast_nodetypes.def"
 
 #undef X
   _COUNT,
@@ -32,12 +32,12 @@ enum class ASTNodeType : uint16_t
 
 // shortcuts for nodetype values
 #define X(Name) inline constexpr ASTNodeType Name = ASTNodeType::Name;
-#include "ast_nodetypes.def"
+#include "front/ast_nodetypes.def"
 #undef X
 
 // shortcuts for optype values
 #define X(Name, Op, ...) inline constexpr OpType Name = OpType::Name;
-#include "ast_optypes.def"
+#include "front/ast_optypes.def"
 #undef X
 
 enum class Modifier : uint16_t;
@@ -325,6 +325,12 @@ duplicateNode(ASTNode* node);
 
 void
 freeNode(ASTNode* node);
+
+void
+astNodeLLConcat(ASTNode* left, ASTNode* right);
+
+ASTNode*
+astNodeLLPrepend(ASTNode* list, ASTNode* node);
 
 void
 astNodeLLAppend(ASTNode* list, ASTNode* node);

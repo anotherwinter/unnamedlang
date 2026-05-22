@@ -1,16 +1,19 @@
 #pragma once
-#include "../shared.h"
+#include "shared.h"
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 struct TypeID
 {
   using __TypeID = uint32_t;
+  // dynamicID value is used for everything uninitialized/unresolved
   static constexpr __TypeID dynamicID = 0;
+  // invalidID reserved for future uses
   static constexpr __TypeID invalidID = std::numeric_limits<__TypeID>::max();
   __TypeID val = dynamicID;
 
@@ -222,15 +225,10 @@ struct FunctionInfo
 
 struct VarInfo
 {
+  // points to variable id for global variables or to index in class for fields
   VarID id = {};
   TypeID type = {};
   Modifier mod = Modifier::None;
-};
-
-struct VarResolution
-{
-  VarInfo varInfo;
-  TypeID ownerID = {};
 };
 
 struct FnNameResolution
@@ -249,21 +247,33 @@ struct FnResolution
 
 struct MethodDeclInfo
 {
-  std::string name;
+  FnNameID nameID = {};
   FunctionID id = {};
 };
 
 struct FieldDeclInfo
 {
   std::string name;
-  VarInfo info;
+  VarInfo info = {};
+};
+
+struct FnDeclKey
+{
+  FunctionID id;
+  FnNameID nameID;
 };
 
 struct ClassInfo
 {
   const TypeID classID = {};
-  bool isPrimitive;
-  bool isValueImmutable;
+  bool isPrimitive = false;
+  bool isValueImmutable = false;
+};
+
+struct NameResolution
+{
+  TypeID ownerID = {};
+  std::variant<std::monostate, VarInfo, FnNameID> nameID;
 };
 
 inline constexpr bool
@@ -289,12 +299,6 @@ isValid(FunctionID id)
 {
   return id.val != FunctionID::invalidID;
 }
-
-struct FnDeclKey
-{
-  FunctionID id;
-  FnNameID nameID;
-};
 
 using ClassesMap = std::unordered_map<TypeID, ClassInfo>;
 using NameToTypeIDMap = std::unordered_map<std::string, TypeID>;
@@ -342,7 +346,9 @@ public:
     bool exact = false,
     bool single = false);
 
-  [[nodiscard]] FnNameResolution resolveFunctionName(const std::string& name);
+  [[nodiscard]] NameResolution resolveName(const std::string& name);
+
+  [[nodiscard]] NameResolution resolveVarCurScope(const std::string& name);
 
   [[nodiscard]] TypeID beginDeclareClass(const std::string& name);
 
@@ -359,19 +365,23 @@ public:
                                       TypeID type = {},
                                       Modifier mod = Modifier::None);
 
-  [[nodiscard]] VarResolution resolveVariable(const std::string& name);
+  [[nodiscard]] FnNameID resolveMethodName(TypeID ownerID,
+                                           const std::string& name);
+
+  [[nodiscard]] VarInfo resolveField(TypeID ownerID, const std::string& name);
 
   [[nodiscard]] VarInfo* resolveVariable(VarID id);
 
   [[nodiscard]] VarInfo* resolveField(VarID id, TypeID ownerID);
 
-  [[nodiscard]] [[nodiscard]] VarID resolveVariableCurScope(
-    const std::string& name);
-
   // push new scope. optional typeid parameter also declares fields from
   // specified class
-  void pushScope(TypeID ownerID = {});
+  void pushScope(TypeID ownerID = {}, FunctionID fnID = {});
   void popScope();
+
+  bool isGlobalScope();
+  
+  TypeID getCurScopeOwnerID();
 
 private:
   SymbolRegistry(const SymbolRegistry& other) = delete;
@@ -384,7 +394,7 @@ private:
 
   // first class declared/defined will be assigned to dynamic type ID, so it
   // should be dynamic class first
-  TypeID _typeID = dynamicTypeID;
+  TypeID _typeID = { dynamicTypeID };
 
   std::unordered_map<TypeID, MethodsMap> _methods;
 

@@ -47,8 +47,8 @@
 // "%code requires" blocks.
 #line 15 "bnf.y"
 
-#include "ast.h"
-#include "lexer.h"
+#include "front/ast.h"
+#include "front/lexer.h"
 #include "shared.h"
 #include <stack>
 
@@ -421,86 +421,89 @@ namespace yy {
         S_delimiter_list = 78,                   // delimiter_list
         S_opt_program_stmt_list = 79,            // opt_program_stmt_list
         S_program_stmt_list = 80,                // program_stmt_list
-        S_program_stmt = 81,                     // program_stmt
-        S_global_stmt = 82,                      // global_stmt
-        S_global_stmt_stmt = 83,                 // global_stmt_stmt
-        S_stmt = 84,                             // stmt
-        S_stmt_stmt = 85,                        // stmt_stmt
-        S_code_block = 86,                       // code_block
-        S_opt_stmt_list = 87,                    // opt_stmt_list
-        S_stmt_list = 88,                        // stmt_list
-        S_89_1 = 89,                             // $@1
-        S_stmt_list_tail = 90,                   // stmt_list_tail
-        S_code_block_or_stmt = 91,               // code_block_or_stmt
-        S_del_stmt = 92,                         // del_stmt
-        S_cntrl_cnstrct = 93,                    // cntrl_cnstrct
-        S_loop_whl = 94,                         // loop_whl
-        S_loop_for = 95,                         // loop_for
-        S_loop_for_init = 96,                    // loop_for_init
-        S_loop_for_cond = 97,                    // loop_for_cond
-        S_loop_for_post_iter = 98,               // loop_for_post_iter
-        S_ret_stmt = 99,                         // ret_stmt
-        S_switch_stmt = 100,                     // switch_stmt
-        S_opt_switch_case_list = 101,            // opt_switch_case_list
-        S_switch_case_list = 102,                // switch_case_list
-        S_switch_case = 103,                     // switch_case
-        S_brk_stmt = 104,                        // brk_stmt
-        S_if_stmt = 105,                         // if_stmt
-        S_opt_else = 106,                        // opt_else
-        S_toss_stmt = 107,                       // toss_stmt
-        S_op_assign = 108,                       // op_assign
-        S_op_logic = 109,                        // op_logic
-        S_op_cond = 110,                         // op_cond
-        S_op_bitwise_xor = 111,                  // op_bitwise_xor
-        S_op_bitwise_or = 112,                   // op_bitwise_or
-        S_op_bitwise_and = 113,                  // op_bitwise_and
-        S_op_bitwise_shift = 114,                // op_bitwise_shift
-        S_op_arithm_add = 115,                   // op_arithm_add
-        S_op_arithm_mul = 116,                   // op_arithm_mul
-        S_op_unary_neg = 117,                    // op_unary_neg
-        S_op_unary_logic_neg = 118,              // op_unary_logic_neg
-        S_op_unary_inc = 119,                    // op_unary_inc
-        S_expr = 120,                            // expr
-        S_lvl_logic = 121,                       // lvl_logic
-        S_lvl_cond = 122,                        // lvl_cond
-        S_lvl_bitwise_xor = 123,                 // lvl_bitwise_xor
-        S_lvl_bitwise_or = 124,                  // lvl_bitwise_or
-        S_lvl_bitwise_and = 125,                 // lvl_bitwise_and
-        S_lvl_bitwise_shift = 126,               // lvl_bitwise_shift
-        S_lvl_arithm_add = 127,                  // lvl_arithm_add
-        S_lvl_arithm_mul = 128,                  // lvl_arithm_mul
-        S_lvl_unary_neg = 129,                   // lvl_unary_neg
-        S_lvl_unary_inc = 130,                   // lvl_unary_inc
-        S_lvl_postfix = 131,                     // lvl_postfix
-        S_primary = 132,                         // primary
-        S_opt_expr = 133,                        // opt_expr
-        S_opt_expr_list = 134,                   // opt_expr_list
-        S_expr_list = 135,                       // expr_list
-        S_literal = 136,                         // literal
-        S_arr_initializer = 137,                 // arr_initializer
-        S_nameNode = 138,                        // nameNode
-        S_enum_stmt = 139,                       // enum_stmt
-        S_enum_element = 140,                    // enum_element
-        S_enum_opt_elements = 141,               // enum_opt_elements
-        S_enum_elements = 142,                   // enum_elements
-        S_fn_parameter = 143,                    // fn_parameter
-        S_fn_opt_params_list = 144,              // fn_opt_params_list
-        S_fn_params_list = 145,                  // fn_params_list
-        S_fn_def = 146,                          // fn_def
-        S_var_decl = 147,                        // var_decl
-        S_var_decl_assign_list = 148,            // var_decl_assign_list
-        S_var_decl_assign = 149,                 // var_decl_assign
-        S_var_decl_modifiers = 150,              // var_decl_modifiers
-        S_var_decl_modifier = 151,               // var_decl_modifier
-        S_var_type = 152,                        // var_type
-        S_assign = 153,                          // assign
-        S_assign_rhs = 154,                      // assign_rhs
-        S_class_def = 155,                       // class_def
-        S_opt_class_member_list = 156,           // opt_class_member_list
-        S_class_member_list = 157,               // class_member_list
-        S_class_member = 158,                    // class_member
-        S_class_member_mod_list = 159,           // class_member_mod_list
-        S_class_member_mod = 160                 // class_member_mod
+        S_program_stmt_list_head = 81,           // program_stmt_list_head
+        S_program_stmt_list_tail = 82,           // program_stmt_list_tail
+        S_program_stmt = 83,                     // program_stmt
+        S_global_stmt = 84,                      // global_stmt
+        S_stmt = 85,                             // stmt
+        S_stmt_stmt = 86,                        // stmt_stmt
+        S_code_block = 87,                       // code_block
+        S_opt_stmt_list = 88,                    // opt_stmt_list
+        S_stmt_list = 89,                        // stmt_list
+        S_stmt_list_head = 90,                   // stmt_list_head
+        S_stmt_list_tail = 91,                   // stmt_list_tail
+        S_code_block_or_stmt = 92,               // code_block_or_stmt
+        S_del_stmt = 93,                         // del_stmt
+        S_cntrl_cnstrct = 94,                    // cntrl_cnstrct
+        S_loop_whl = 95,                         // loop_whl
+        S_loop_for = 96,                         // loop_for
+        S_loop_for_init = 97,                    // loop_for_init
+        S_loop_for_cond = 98,                    // loop_for_cond
+        S_loop_for_post_iter = 99,               // loop_for_post_iter
+        S_ret_stmt = 100,                        // ret_stmt
+        S_switch_stmt = 101,                     // switch_stmt
+        S_opt_switch_case_list = 102,            // opt_switch_case_list
+        S_switch_case_list = 103,                // switch_case_list
+        S_switch_case = 104,                     // switch_case
+        S_brk_stmt = 105,                        // brk_stmt
+        S_if_stmt = 106,                         // if_stmt
+        S_opt_else = 107,                        // opt_else
+        S_toss_stmt = 108,                       // toss_stmt
+        S_op_assign = 109,                       // op_assign
+        S_op_logic = 110,                        // op_logic
+        S_op_cond = 111,                         // op_cond
+        S_op_bitwise_xor = 112,                  // op_bitwise_xor
+        S_op_bitwise_or = 113,                   // op_bitwise_or
+        S_op_bitwise_and = 114,                  // op_bitwise_and
+        S_op_bitwise_shift = 115,                // op_bitwise_shift
+        S_op_arithm_add = 116,                   // op_arithm_add
+        S_op_arithm_mul = 117,                   // op_arithm_mul
+        S_op_unary_neg = 118,                    // op_unary_neg
+        S_op_unary_logic_neg = 119,              // op_unary_logic_neg
+        S_op_unary_inc = 120,                    // op_unary_inc
+        S_expr = 121,                            // expr
+        S_lvl_logic = 122,                       // lvl_logic
+        S_lvl_cond = 123,                        // lvl_cond
+        S_lvl_bitwise_xor = 124,                 // lvl_bitwise_xor
+        S_lvl_bitwise_or = 125,                  // lvl_bitwise_or
+        S_lvl_bitwise_and = 126,                 // lvl_bitwise_and
+        S_lvl_bitwise_shift = 127,               // lvl_bitwise_shift
+        S_lvl_arithm_add = 128,                  // lvl_arithm_add
+        S_lvl_arithm_mul = 129,                  // lvl_arithm_mul
+        S_lvl_unary_neg = 130,                   // lvl_unary_neg
+        S_lvl_unary_inc = 131,                   // lvl_unary_inc
+        S_lvl_postfix = 132,                     // lvl_postfix
+        S_primary = 133,                         // primary
+        S_opt_expr = 134,                        // opt_expr
+        S_opt_expr_list = 135,                   // opt_expr_list
+        S_expr_list = 136,                       // expr_list
+        S_literal = 137,                         // literal
+        S_arr_initializer = 138,                 // arr_initializer
+        S_nameNode = 139,                        // nameNode
+        S_enum_stmt = 140,                       // enum_stmt
+        S_enum_element = 141,                    // enum_element
+        S_enum_opt_elements = 142,               // enum_opt_elements
+        S_enum_elements = 143,                   // enum_elements
+        S_fn_parameter = 144,                    // fn_parameter
+        S_fn_opt_params_list = 145,              // fn_opt_params_list
+        S_fn_params_list = 146,                  // fn_params_list
+        S_fn_def = 147,                          // fn_def
+        S_var_decl = 148,                        // var_decl
+        S_var_decl_assign_list = 149,            // var_decl_assign_list
+        S_var_decl_assign = 150,                 // var_decl_assign
+        S_var_decl_modifiers = 151,              // var_decl_modifiers
+        S_var_decl_modifier = 152,               // var_decl_modifier
+        S_var_type = 153,                        // var_type
+        S_assign = 154,                          // assign
+        S_assign_rhs = 155,                      // assign_rhs
+        S_class_def = 156,                       // class_def
+        S_opt_class_member_list = 157,           // opt_class_member_list
+        S_class_member_list = 158,               // class_member_list
+        S_class_member_list_head = 159,          // class_member_list_head
+        S_class_member_list_tail = 160,          // class_member_list_tail
+        S_class_member = 161,                    // class_member
+        S_class_member_mod_list = 162,           // class_member_mod_list
+        S_class_member_mod = 163                 // class_member_mod
       };
     };
 
@@ -735,7 +738,7 @@ namespace yy {
     static const short yypgoto_[];
 
     // YYDEFGOTO[NTERM-NUM].
-    static const short yydefgoto_[];
+    static const unsigned char yydefgoto_[];
 
     // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
     // positive, shift that token.  If negative, reduce the rule whose
@@ -984,9 +987,9 @@ namespace yy {
     /// Constants.
     enum
     {
-      yylast_ = 462,     ///< Last index in yytable_.
-      yynnts_ = 86,  ///< Number of nonterminal symbols.
-      yyfinal_ = 86 ///< Termination state number.
+      yylast_ = 446,     ///< Last index in yytable_.
+      yynnts_ = 89,  ///< Number of nonterminal symbols.
+      yyfinal_ = 8 ///< Termination state number.
     };
 
 
@@ -998,7 +1001,7 @@ namespace yy {
 
 
 } // yy
-#line 1002 "parser.hpp"
+#line 1005 "parser.hpp"
 
 
 

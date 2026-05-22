@@ -1,14 +1,11 @@
 #pragma once
-#include "../alloc/arena.h"
-#include "symbolregistry.h"
+#include "alloc/arena.h"
+#include "front/symbolregistry.h"
 
 class Scope
 {
 public:
-  Scope(TypeID ownerID = {});
-
-  // resolve name into varid
-  VarInfo* resolve(const std::string name);
+  Scope(SymbolRegistry& reg, TypeID ownerID = {});
 
   inline VarID resolveID(const std::string name)
   {
@@ -37,7 +34,10 @@ public:
   // declare variable
   VarID declare(const std::string& name, TypeID type, Modifier mod);
 
+  NameResolution resolveName(const std::string& name);
+
 private:
+  SymbolRegistry& _reg;
   VarID _varID = { 0 };
   const TypeID _ownerID;
 

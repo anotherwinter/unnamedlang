@@ -1,7 +1,9 @@
 #include "front/symbolregistry.h"
 #include "diagnostics.h"
+#include "errorcode_bases.h"
 #include "front/scope.h"
 #include <algorithm>
+#include <variant>
 
 SymbolRegistry::SymbolRegistry(Diagnostics& diag)
   : _diag(diag)
@@ -32,7 +34,6 @@ SymbolRegistry::declareFunction(const std::string& name,
     return { fnRes.id, nameID };
 
   FunctionInfo fnInfo = { paramNames, paramTypes, _fnID, ownerID };
-  ++_fnID;
   auto inserted = _fnInfoStorage.emplace(_fnID, fnInfo);
 
   auto fnsIt = _functions.try_emplace(ownerID);
@@ -41,6 +42,8 @@ SymbolRegistry::declareFunction(const std::string& name,
     overloadsIt.first->second.try_emplace(makeFnParamBitmask(paramTypes));
   insertFunctionOverload(inserted.first->second,
                          maskedOverloadsIt.first->second);
+
+  ++_fnID;
 
   return { fnInfo.id, nameID };
 }
@@ -119,41 +122,44 @@ SymbolRegistry::resolveFunctionOverloads(FnNameID nameID,
   return matches;
 }
 
-FnNameResolution
-SymbolRegistry::resolveFunctionName(const std::string& name)
+NameResolution
+SymbolRegistry::resolveName(const std::string& name)
 {
-  auto it = _fnNameToID.find(name);
-  if (it == _fnNameToID.end())
-    return {};
-
-  auto fnNameID = it->second;
-
-  // TODO: add map that will contain fnnameid as key and vector of FnNameResolution as value
-  // that way we can avoid iterating over scopes and just try to get last resolution
-  // from vector if given fnnameid exists in map
-
-  // resolve in owner scopes
   for (auto& s : _scopes) {
-    auto ownerID = s->getOwnerID();
-    if (!isValid(ownerID))
-      continue;
-
-    auto methodsIt = _methods.find(ownerID);
-    if (methodsIt != _methods.end()) {
-      auto methodIt = methodsIt->second.find(fnNameID);
-      if (methodIt != methodsIt->second.end())
-        return { fnNameID, ownerID };
-    }
+    auto res = s->resolveName(name);
+    if (!std::holds_alternative<std::monostate>(res.nameID))
+      return res;
   }
 
-  return { fnNameID, TypeID{} };
+  auto nameIt = _fnNameToID.find(name);
+  if (nameIt == _fnNameToID.end())
+    return {};
+
+  auto globalIt = _functions.find({});
+  if (globalIt == _functions.end()) {
+    _diag.putMsg(STUB_ERR, 0, 0);
+    return {};
+  }
+
+  auto globalFnNameIt = globalIt->second.find(nameIt->second);
+  if (globalFnNameIt == globalIt->second.end())
+    return {};
+
+  return { TypeID{}, globalFnNameIt->first };
+}
+
+NameResolution
+SymbolRegistry::resolveVarCurScope(const std::string& name)
+{
+  return _scopes.back()->resolveName(name);
 }
 
 TypeID
 SymbolRegistry::beginDeclareClass(const std::string& name)
 {
   auto id = _typeID;
-  _nameToTypeID.emplace(name, _typeID);
+  _nameToTypeID.emplace(name, id);
+  _classes.emplace(id, ClassInfo{});
   ++_typeID;
 
   return id;
@@ -166,6 +172,34 @@ SymbolRegistry::finishDeclareClass(TypeID classID,
                                    const std::vector<MethodDeclInfo>& methods,
                                    const std::vector<FieldDeclInfo>& fields)
 {
+  // TODO: differentiate between errors which can be produced
+  auto classIt = _classes.find(classID);
+  if (classIt == _classes.end())
+    return {};
+
+  classIt->second.isPrimitive = isPrimitive;
+  classIt->second.isValueImmutable = isValueImmutable;
+
+  auto fieldsMapPair = _fields.try_emplace(classID);
+  if (!fieldsMapPair.second)
+    return {};
+
+  auto fieldsIt = &fieldsMapPair.first->second;
+  for (auto& f : fields)
+    fieldsIt->try_emplace(f.name, f.info);
+
+  auto methodsMapPair = _methods.try_emplace(classID);
+  if (!methodsMapPair.second)
+    return {};
+
+  auto methodsIt = &methodsMapPair.first->second;
+  for (auto& m : methods) {
+    auto outer = methodsIt->try_emplace(m.nameID);
+    auto inner = outer.first->second;
+    inner.push_back(m.id);
+  }
+
+  return classID;
 }
 
 TypeID
@@ -186,22 +220,36 @@ SymbolRegistry::declareVariable(const std::string& name,
   return _scopes.back()->declare(name, type, mod);
 }
 
-VarResolution
-SymbolRegistry::resolveVariable(const std::string& name)
+FnNameID
+SymbolRegistry::resolveMethodName(TypeID ownerID, const std::string& name)
 {
-  size_t idx = _scopes.size() - 1;
-  while (true) {
-    auto varInfo = _scopes.at(idx)->resolve(name);
-    if (varInfo != nullptr)
-      return { *varInfo, _scopes.at(idx)->getOwnerID() };
+  auto nameIt = _fnNameToID.find(name);
+  if (nameIt == _fnNameToID.end())
+    return {};
 
-    if (idx == 0)
-      break;
+  auto methodsIt = _methods.find(ownerID);
+  if (methodsIt == _methods.end())
+    return {};
 
-    --idx;
-  }
+  auto methodNameIt = methodsIt->second.find(nameIt->second);
+  if (methodNameIt == methodsIt->second.end())
+    return {};
 
-  return {};
+  return methodNameIt->first;
+}
+
+VarInfo
+SymbolRegistry::resolveField(TypeID ownerID, const std::string& name)
+{
+  auto fieldsIt = _fields.find(ownerID);
+  if (fieldsIt == _fields.end())
+    return {};
+
+  auto nameIt = fieldsIt->second.find(name);
+  if (nameIt == fieldsIt->second.end())
+    return {};
+
+  return nameIt->second;
 }
 
 VarInfo*
@@ -226,21 +274,17 @@ SymbolRegistry::resolveField(VarID id, TypeID ownerID)
   return nullptr;
 }
 
-VarID
-SymbolRegistry::resolveVariableCurScope(const std::string& name)
-{
-  return _scopes.back()->resolveID(name);
-}
-
 void
-SymbolRegistry::pushScope(TypeID ownerID)
+SymbolRegistry::pushScope(TypeID ownerID, FunctionID fnID)
 {
-  _scopes.emplace_back(std::make_unique<Scope>());
-  if (isValid(ownerID)) {
-    auto fieldsIt = _fields.find(ownerID);
-    if (fieldsIt != _fields.end()) {
-      for (auto& f : fieldsIt->second)
-        auto varID = declareVariable(f.first, f.second.type, f.second.mod);
+  _scopes.emplace_back(std::make_unique<Scope>(*this, ownerID));
+  if (isValid(fnID)) {
+    auto fnInfo = resolveFunction(fnID);
+    if (fnInfo) {
+      for (size_t i = 0; i < fnInfo->paramNames.size(); ++i) {
+        auto varID = _scopes.back()->declare(
+          fnInfo->paramNames[i], fnInfo->paramTypes[i], {});
+      }
     }
   }
 }
@@ -249,6 +293,18 @@ void
 SymbolRegistry::popScope()
 {
   _scopes.pop_back();
+}
+
+bool
+SymbolRegistry::isGlobalScope()
+{
+  return _scopes.back()->getOwnerID() == TypeID{};
+}
+
+TypeID
+SymbolRegistry::getCurScopeOwnerID()
+{
+  return _scopes.back()->getOwnerID();
 }
 
 void

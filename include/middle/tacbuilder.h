@@ -195,6 +195,12 @@ private:
   ValueID val = { 0 };
 };
 
+struct MemberAccessContext
+{
+  ValueID base = {};
+  bool ref = false;
+};
+
 class LayoutRegistry;
 class SSAState;
 
@@ -226,7 +232,7 @@ private:
   ValueID buildFromAST(const HIR::TypedNode* node);
 
   ValueID buildNodeList(const HIR::NodeList& list);
-  ValueID buildCallExpr(const HIR::CallExpr& callExpr);
+
   ValueID buildVarDecl(const HIR::VarDecl& varDecl);
   ValueID buildVarAssign(const HIR::VarAssign& varAssign);
   ValueID buildLoopWhl(const HIR::LoopWhl& loopWhl);
@@ -237,8 +243,6 @@ private:
   ValueID buildBrk(const HIR::StmtBrk& stmtBrk);
   ValueID buildBinary(const HIR::BinaryExpr& binary);
   ValueID buildUnary(const HIR::UnaryExpr& unary);
-  ValueID buildMemberAccess(const HIR::MemberAccess& membAccess);
-  ValueID buildArrayAccess(const HIR::ArrayAccess& arrAccess);
   ValueID buildBool(const HIR::BoolVal& val);
   ValueID buildNumber(const HIR::NumVal& val);
   ValueID buildString(const HIR::StringVal& val);
@@ -246,10 +250,15 @@ private:
   ValueID buildName(const HIR::NameExpr& name);
 
   ValueID buildExpr(const HIR::TypedNode* expr, bool ref = false);
+
+  // value only
+  ValueID buildCallExpr(const HIR::CallExpr& callExpr);
+
+  // value / ref
   ValueID buildMemberAccess(const HIR::MemberAccess& membAccess,
                             bool ref = false);
-  ValueID buildArrayAccess(const HIR::ArrayAccess& arrAccess, bool ref = false);
-  ValueID buildName(const HIR::NameExpr& name, bool ref = false);
+  ValueID buildArrayAccess(const HIR::ArrayAccess& arrAccess, MemberAccessContext ctx = {});
+  ValueID buildName(const HIR::NameExpr& name, MemberAccessContext ctx = {});
 
   ValueID buildCallArgument(const HIR::TypedNode* arg);
 };

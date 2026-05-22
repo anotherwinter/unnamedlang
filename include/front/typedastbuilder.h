@@ -1,6 +1,6 @@
 #pragma once
-#include "../alloc/arena.h"
-#include "typedast.h"
+#include "front/nodeallocator.h"
+#include "front/typedast.h"
 
 struct ASTNode;
 
@@ -13,12 +13,12 @@ namespace HIR {
 class TypedASTBuilder
 {
 public:
-  TypedASTBuilder(Diagnostics& diag, SymbolRegistry& reg);
+  TypedASTBuilder(Diagnostics& diag, SymbolRegistry& reg, NodeAllocator& alloc);
 
   // pass0/1 - build typed ast
   inline TypedTree<Unanalyzed> build(const ASTNode* root)
   {
-    _arena.reset();
+    _alloc.reset();
     predeclare(root);
     TypedNode* typedRoot = buildFromAST(root);
 
@@ -31,17 +31,10 @@ private:
 
   Diagnostics& _diag;
   SymbolRegistry& _reg;
-  ArenaAlloc _arena;
-
-  template<typename T>
-  TypedNode* allocTypedNode(const ASTNode* node);
-
-  inline TypedNode* allocTypedNode()
-  {
-    return allocTypedNode<std::monostate>(nullptr);
-  }
+  NodeAllocator& _alloc;
 
   // pass0 - predeclare all class occurences
+  void predeclarePrebuilts();
   void predeclare(const ASTNode* node);
 
   // pass1 - build typed ast tree (might contain erroneous nodes) without
@@ -50,7 +43,7 @@ private:
 
   // pass1 methods
   TypedNode* buildNodeList(const ASTNode* node);
-  TypedNode* buildFnDef(const ASTNode* node);
+  TypedNode* buildFnDef(const ASTNode* node, TypeID ownerID = {});
   TypedNode* buildCallExpr(const ASTNode* node);
   TypedNode* buildClassDef(const ASTNode* node);
   TypedNode* buildEnumDef(const ASTNode* node);

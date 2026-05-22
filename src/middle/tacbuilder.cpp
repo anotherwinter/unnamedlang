@@ -195,16 +195,6 @@
 // }
 
 // ValueID
-// TACBuilder::buildMemberAccess(const MemberAccess& membAccess)
-// {
-// }
-
-// ValueID
-// TACBuilder::buildArrayAccess(const ArrayAccess& arrAccess)
-// {
-// }
-
-// ValueID
 // TACBuilder::buildBool(const BoolVal& val)
 // {
 // }
@@ -253,25 +243,19 @@
 // TACBuilder::buildMemberAccess(const HIR::MemberAccess& membAccess, bool ref)
 // {
 //   ValueID base = {};
-//   OpCode loadOp = ref ? OpCode::LoadRef : OpCode::Load;
 //   base = buildExpr(membAccess.base, ref);
 
 //   for (size_t i = 0; i < membAccess.memb.size() - 1; ++i) {
-//     auto memb = membAccess.memb[i];
-//     if (auto )
-
-//     Instruction getRef = {OpCode::GetRef, {TACValue{base}, }}  
-//     base = 
 //   }
 // }
 
 // ValueID
-// TACBuilder::buildArrayAccess(const HIR::ArrayAccess& arrAccess, bool ref)
+// TACBuilder::buildArrayAccess(const HIR::ArrayAccess& arrAccess, MemberAccessContext ctx)
 // {
 // }
 
 // ValueID
-// TACBuilder::buildName(const HIR::NameExpr& name, bool ref)
+// TACBuilder::buildName(const HIR::NameExpr& name, MemberAccessContext ctx)
 // {
 //   if
 // }

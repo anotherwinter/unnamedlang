@@ -91,4 +91,7 @@ X(DELIMITER)
 // lexer error
 X(ERROR)
 
+// comment (not used in AST)
+X(COMMENT)
+
 X(ENDOFTOKENS)

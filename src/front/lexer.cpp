@@ -37,7 +37,7 @@ Lexer::load(const std::string& str)
   _col = 1;
   _error = false;
   _eof = str.empty();
-  _lastTok = {nullptr, TokenType::ENDOFTOKENS, _line, _col};
+  _lastTok = { nullptr, TokenType::ENDOFTOKENS, _line, _col };
 }
 
 Token
@@ -225,6 +225,7 @@ Lexer::lexer()
     case '~': {
       // skip comments
       lexerComment();
+      tok.type = TokenType::COMMENT;
 
       break;
     }

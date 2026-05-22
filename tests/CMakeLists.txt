@@ -14,6 +14,7 @@ add_library(core
     ../src/front/typedastanalyzer.cpp
     ../src/front/symbolregistry.cpp
     ../src/front/scope.cpp
+    ../src/front/nodeallocator.cpp
 )
 
 target_include_directories(core

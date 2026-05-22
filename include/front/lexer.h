@@ -1,6 +1,6 @@
 #pragma once
-#include "../diagnostics.h"
-#include "../errorcode_bases.h"
+#include "diagnostics.h"
+#include "errorcode_bases.h"
 #include <cstring>
 #include <set>
 #include <string>
@@ -13,7 +13,7 @@ enum class TokenType : uint16_t
 #define GET_X(_1, _2, NAME, ...) NAME
 #define X(...) GET_X(__VA_ARGS__, X2, X1)(__VA_ARGS__)
 
-#include "lex_tokentypes.def"
+#include "front/lex_tokentypes.def"
 #undef X
 #undef GET_X
 #undef X1
@@ -87,20 +87,21 @@ private:
     if (_eof)
       return;
 
-    // advance one symbol
-    ++_ptr;
-
     if (*_ptr == '\n') {
       ++_line;
-      _col = 0;
+      _col = 1;
     } else
       ++_col;
+
+    // advance one symbol
+    ++_ptr;
 
     _eof = _ptr == _end;
   }
 
   inline void advance(size_t n)
   {
+    _col += n;
     _ptr = (_ptr + n < _end) ? _ptr + n : _end;
     _eof = _ptr == _end;
   }

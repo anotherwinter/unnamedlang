@@ -21,6 +21,7 @@ main(int argc, char* argv[])
     std::ostringstream oss;
     oss << file.rdbuf();
 
+    // init.getParser().set_debug_level(1);
     init.getLexer().load(oss.str());
     if (init.getParser().parse() == 0) {
       auto tree = init.getTypedAST().build(astRoot);

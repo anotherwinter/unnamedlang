@@ -1,13 +1,18 @@
 #include "front/typedastanalyzer.h"
+#include "errorcode_bases.h"
 #include "front/symbolregistry.h"
 #include "front/typedast.h"
 #include <variant>
 
 using namespace HIR;
 
-TypedASTAnalyzer::TypedASTAnalyzer(Diagnostics& diag, SymbolRegistry& reg)
+TypedASTAnalyzer::TypedASTAnalyzer(Diagnostics& diag,
+                                   SymbolRegistry& reg,
+                                   NodeAllocator& alloc)
   : _diag(diag)
   , _reg(reg)
+  , _alloc(alloc)
+  , _ignoreSelfInjecting(false)
 {
   initPrebuilts();
 }
@@ -15,15 +20,14 @@ TypedASTAnalyzer::TypedASTAnalyzer(Diagnostics& diag, SymbolRegistry& reg)
 void
 TypedASTAnalyzer::initPrebuilts()
 {
-  _boolType = { _reg.beginDeclareClass("dynamic") };
-  _boolType = { _reg.beginDeclareClass("Bool") };
-  _numberType = { _reg.beginDeclareClass("Number") };
-  _stringType = { _reg.beginDeclareClass("String") };
-  _arrayType = { _reg.beginDeclareClass("Array") };
+  _boolType = _reg.resolveClass("Bool");
+  _numberType = _reg.resolveClass("Number");
+  _stringType = _reg.resolveClass("String");
+  _arrayType = _reg.resolveClass("Array");
 }
 
 void
-TypedASTAnalyzer::analyzeTypedNode(const TypedNode* node)
+TypedASTAnalyzer::analyzeTypedNode(TypedNode* node)
 {
   if (!node)
     return;
@@ -53,6 +57,7 @@ TypedASTAnalyzer::analyzeTypedNode(const TypedNode* node)
       [&](const StringVal& stringVal) { analyzeString(node); },
       [&](const ArrayVal& arrVal) { analyzeArray(node); },
       [&](const NameExpr& nameExpr) { analyzeName(node); },
+      [&](const SelfExpr& selfExpr) {},
     },
     node->node);
 }
@@ -65,9 +70,9 @@ TypedASTAnalyzer::analyzeNodeList(const NodeList& list)
 }
 
 void
-TypedASTAnalyzer::analyzeFnDef(const TypedNode* node)
+TypedASTAnalyzer::analyzeFnDef(TypedNode* node)
 {
-  auto fnDef = std::get<FnDef>(node->node);
+  auto& fnDef = std::get<FnDef>(node->node);
   FunctionID fnID = fnDef.fnID;
   if (!isValid(fnID)) {
     _diag.putMsg(STUB_ERR, node->line, node->col);
@@ -90,24 +95,42 @@ TypedASTAnalyzer::analyzeFnDef(const TypedNode* node)
     return;
   }
 
+  _reg.pushScope(fnInfo->ownerID, fnInfo->id);
   analyzeTypedNode(fnDef.body);
+  _reg.popScope();
 }
 
 void
-TypedASTAnalyzer::analyzeCallExpr(const TypedNode* node)
+TypedASTAnalyzer::analyzeCallExpr(TypedNode* node)
 {
-  auto callExpr = std::get<CallExpr>(node->node);
+  auto& callExpr = std::get<CallExpr>(node->node);
   analyzeTypedNode(callExpr.callee);
   for (auto& a : callExpr.args)
     analyzeTypedNode(a);
 
   auto callRes = resolveCallExpr(callExpr);
+  if (callRes.resolved && !std::holds_alternative<FnResolution>(callRes.res)) {
+    _diag.putMsg(STUB_ERR, node->line, node->col);
+
+  }
+
+  else if (callRes.resolved && !_ignoreSelfInjecting && !_reg.isGlobalScope()) {
+    MemberAccess membAccess = {};
+
+    auto callNode = _alloc.allocTypedNode<CallExpr>(node->line, node->col);
+    callNode->node = callExpr;
+
+    membAccess.base = _alloc.allocTypedNode<SelfExpr>(node->line, node->col);
+    membAccess.memb.push_back(callNode);
+
+    node->node = membAccess;
+  }
 }
 
 void
-TypedASTAnalyzer::analyzeClassDef(const TypedNode* node)
+TypedASTAnalyzer::analyzeClassDef(TypedNode* node)
 {
-  auto classDef = std::get<ClassDef>(node->node);
+  auto& classDef = std::get<ClassDef>(node->node);
   std::set<const char*> duplicates;
   for (auto& f : classDef.fields) {
     if (duplicates.find(f) == duplicates.end())
@@ -116,24 +139,24 @@ TypedASTAnalyzer::analyzeClassDef(const TypedNode* node)
       _diag.putMsg(STUB_ERR, node->line, node->col);
   }
 
-  for (auto& m : classDef.methods) {
+  for (auto& m : classDef.methods)
     analyzeFnDef(m);
-  }
 }
 
 void
-TypedASTAnalyzer::analyzeEnumDef(const TypedNode* node)
+TypedASTAnalyzer::analyzeEnumDef(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeVarDecl(const TypedNode* node)
+TypedASTAnalyzer::analyzeVarDecl(TypedNode* node)
 {
-  auto varDecl = std::get<VarDecl>(node->node);
-  auto curScopeRes = _reg.resolveVariableCurScope(varDecl.name);
-  // if variable is already declared in current scope
-  if (isValid(curScopeRes))
+  auto& varDecl = std::get<VarDecl>(node->node);
+  auto curScopeRes = _reg.resolveVarCurScope(varDecl.name);
+  // if variable, not a field is already declared in current scope
+  if (std::holds_alternative<VarInfo>(curScopeRes.nameID) &&
+      !isValid(curScopeRes.ownerID))
     _diag.putMsg(STUB_ERR, node->line, node->col);
   else {
     VarID id = _reg.declareVariable(varDecl.name, varDecl.type, varDecl.mod);
@@ -149,24 +172,17 @@ TypedASTAnalyzer::analyzeVarDecl(const TypedNode* node)
 }
 
 void
-TypedASTAnalyzer::analyzeVarAssign(const TypedNode* node)
+TypedASTAnalyzer::analyzeVarAssign(TypedNode* node)
 {
-  auto varAssign = std::get<VarAssign>(node->node);
+  auto& varAssign = std::get<VarAssign>(node->node);
   analyzeTypedNode(varAssign.lhs);
   analyzeTypedNode(varAssign.rhs);
 
   auto lhs = resolve(varAssign.lhs);
-
   // dont try to analyze further if lhs cannot be resolved
-  if (!lhs.resolved) {
-    _diag.putMsg(STUB_ERR, varAssign.lhs->line, varAssign.lhs->col);
+  if (!lhs.resolved)
     return;
-  } else if (!std::holds_alternative<VarResolution>(lhs.res)) {
-    _diag.putMsg(STUB_ERR, varAssign.lhs->line, varAssign.lhs->col);
-    return;
-  }
 
-  auto varRes = std::get<VarResolution>(lhs.res);
   TypeID lhsType = inferType(varAssign.lhs);
   TypeID rhsType = inferType(varAssign.rhs);
 
@@ -187,52 +203,52 @@ TypedASTAnalyzer::analyzeVarAssign(const TypedNode* node)
 }
 
 void
-TypedASTAnalyzer::analyzeWhl(const TypedNode* node)
+TypedASTAnalyzer::analyzeWhl(TypedNode* node)
 {
-  auto loopWhl = std::get<LoopWhl>(node->node);
+  auto& loopWhl = std::get<LoopWhl>(node->node);
   analyzeTypedNode(loopWhl.cond);
   analyzeTypedNode(loopWhl.body);
 }
 
 void
-TypedASTAnalyzer::analyzeFor(const TypedNode* node)
+TypedASTAnalyzer::analyzeFor(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeIf(const TypedNode* node)
+TypedASTAnalyzer::analyzeIf(TypedNode* node)
 {
-  auto stmtIf = std::get<StmtIf>(node->node);
+  auto& stmtIf = std::get<StmtIf>(node->node);
   analyzeTypedNode(stmtIf.cond);
   analyzeTypedNode(stmtIf.body);
   analyzeTypedNode(stmtIf.elseBody);
 }
 
 void
-TypedASTAnalyzer::analyzeSwitch(const TypedNode* node)
+TypedASTAnalyzer::analyzeSwitch(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeRet(const TypedNode* node)
+TypedASTAnalyzer::analyzeRet(TypedNode* node)
 {
-  auto stmtRet = std::get<StmtRet>(node->node);
+  auto& stmtRet = std::get<StmtRet>(node->node);
   analyzeTypedNode(stmtRet.retValue);
 }
 
 void
-TypedASTAnalyzer::analyzeBrk(const TypedNode* node)
+TypedASTAnalyzer::analyzeBrk(TypedNode* node)
 {
-  auto stmtBrk = std::get<StmtBrk>(node->node);
+  auto& stmtBrk = std::get<StmtBrk>(node->node);
   analyzeTypedNode(stmtBrk.cond);
 }
 
 void
-TypedASTAnalyzer::analyzeBinaryExpr(const TypedNode* node)
+TypedASTAnalyzer::analyzeBinaryExpr(TypedNode* node)
 {
-  auto binary = std::get<BinaryExpr>(node->node);
+  auto& binary = std::get<BinaryExpr>(node->node);
   analyzeTypedNode(binary.lhs);
   analyzeTypedNode(binary.rhs);
 
@@ -256,7 +272,7 @@ TypedASTAnalyzer::analyzeBinaryExpr(const TypedNode* node)
         { to_underlying(binary.op) }, { lhsType }, rhsType);
 
     if (!isValid(fnRes.id)) {
-      _diag.putMsg(STUB_ERR, node->line, node->col);
+      _diag.putMsg(STUB_ERR, binary.lhs->line, binary.lhs->col);
       return;
     }
 
@@ -265,9 +281,9 @@ TypedASTAnalyzer::analyzeBinaryExpr(const TypedNode* node)
 }
 
 void
-TypedASTAnalyzer::analyzeUnaryExpr(const TypedNode* node)
+TypedASTAnalyzer::analyzeUnaryExpr(TypedNode* node)
 {
-  auto unary = std::get<UnaryExpr>(node->node);
+  auto& unary = std::get<UnaryExpr>(node->node);
   analyzeTypedNode(unary.expr);
   auto exprType = inferType(unary.expr);
 
@@ -281,7 +297,7 @@ TypedASTAnalyzer::analyzeUnaryExpr(const TypedNode* node)
       _reg.resolveFunction({ to_underlying(unary.op) }, {}, exprType);
 
     if (!isValid(fnRes.id)) {
-      _diag.putMsg(STUB_ERR, node->line, node->col);
+      _diag.putMsg(STUB_ERR, unary.expr->line, unary.expr->col);
       return;
     }
 
@@ -290,53 +306,77 @@ TypedASTAnalyzer::analyzeUnaryExpr(const TypedNode* node)
 }
 
 void
-TypedASTAnalyzer::analyzeMemberAccess(const TypedNode* node)
+TypedASTAnalyzer::analyzeMemberAccess(TypedNode* node)
 {
-  auto membAccess = std::get<MemberAccess>(node->node);
+  auto& membAccess = std::get<MemberAccess>(node->node);
   auto res = resolveMemberAccess(membAccess);
+
+  // if not in global scope and injecting of "self" enabled
+  if (membAccess.resolvedBase && !_ignoreSelfInjecting &&
+      !_reg.isGlobalScope()) {
+    membAccess.memb.insert(membAccess.memb.begin(), membAccess.base);
+    membAccess.base = _alloc.allocTypedNode<SelfExpr>(node->line, node->col);
+  }
+
   // error if ownerid is valid (means base is resolved statically), but member
   // cannot be resolved statically
-  if (isValid(res.ownerID) && !res.resolved)
+  if (membAccess.resolvedBase && !membAccess.resolvedChain)
     _diag.putMsg(STUB_ERR, node->line, node->col);
 }
 
 void
-TypedASTAnalyzer::analyzeArrayAccess(const TypedNode* node)
+TypedASTAnalyzer::analyzeArrayAccess(TypedNode* node)
 {
   // STUB: add bounds check (?) and check if index is integer
+  // add "self" injecting
 }
 
 void
-TypedASTAnalyzer::analyzeBool(const TypedNode* node)
+TypedASTAnalyzer::analyzeBool(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeNumber(const TypedNode* node)
+TypedASTAnalyzer::analyzeNumber(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeString(const TypedNode* node)
+TypedASTAnalyzer::analyzeString(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeArray(const TypedNode* node)
+TypedASTAnalyzer::analyzeArray(TypedNode* node)
 {
   // STUB
 }
 
 void
-TypedASTAnalyzer::analyzeName(const TypedNode* node)
+TypedASTAnalyzer::analyzeName(TypedNode* node)
 {
-  auto name = std::get<NameExpr>(node->node);
-  auto nameRes = resolveNameExpr(name);
-  if (!nameRes.resolved)
+  auto& nameExpr = std::get<NameExpr>(node->node);
+  auto nameRes = resolveNameExpr(nameExpr);
+  if (!nameRes.resolved) {
     _diag.putMsg(STUB_ERR, node->line, node->col);
+    return;
+  }
+
+  if (!_ignoreSelfInjecting && isValid(nameRes.ownerID)) {
+    MemberAccess membAccess = {};
+
+    TypedNode* nameNode =
+      _alloc.allocTypedNode<NameExpr>(node->line, node->col);
+    nameNode->node = nameExpr;
+
+    membAccess.base = _alloc.allocTypedNode<SelfExpr>(node->line, node->col);
+    membAccess.memb.push_back(nameNode);
+
+    node->node = membAccess;
+  }
 }
 
 NameResolutionResult
@@ -352,6 +392,7 @@ TypedASTAnalyzer::resolve(TypedNode* node)
       [&](MemberAccess& membAccess) { return resolveMemberAccess(membAccess); },
       [&](ArrayAccess& arrAccess) { return resolveArrayAccess(arrAccess); },
       [&](NameExpr& nameExpr) { return resolveNameExpr(nameExpr); },
+      [&](SelfExpr& selfExpr) { return resolveSelfExpr(); },
     },
     node->node);
 
@@ -370,7 +411,7 @@ TypedASTAnalyzer::resolveCallExpr(CallExpr& callExpr)
 
   // this will be true if failed to resolve statically
   if (!fnNameID)
-    return {};
+    return calleeRes;
 
   std::vector<TypeID> types;
   for (auto& a : callExpr.args) {
@@ -396,21 +437,26 @@ TypedASTAnalyzer::resolveMemberAccess(MemberAccess& membAccess)
   if (!left.resolved || !isValid(left.type))
     return {};
 
+  membAccess.resolvedBase = true;
+  bool selfTemp = _ignoreSelfInjecting;
+  _ignoreSelfInjecting = true;
   auto membOwnerType = left.type;
   NameResolutionResult right;
-  bool resolved = true;
+  bool resolvedChain = true;
   for (auto& m : membAccess.memb) {
     _reg.pushScope(membOwnerType);
     right = resolve(m);
     if (!right.resolved)
-      resolved = false;
+      resolvedChain = false;
 
     _reg.popScope();
 
     membOwnerType = right.type;
   }
 
-  membAccess.resolved = resolved;
+  _ignoreSelfInjecting = selfTemp;
+  membAccess.resolvedChain = resolvedChain;
+
   return right;
 }
 
@@ -427,21 +473,22 @@ TypedASTAnalyzer::resolveArrayAccess(ArrayAccess& arrAccess)
 NameResolutionResult
 TypedASTAnalyzer::resolveNameExpr(NameExpr& nameExpr)
 {
-  // 1. try to resolve in frames
-  auto varRes = _reg.resolveVariable(nameExpr.name);
-  if (isValid(varRes.varInfo.id)) {
-    nameExpr.varRes = varRes;
-    return { varRes.ownerID, varRes.varInfo.type, varRes, true };
-  }
-
-  // 2. try to resolve function name
-  auto fnNameRes = _reg.resolveFunctionName(nameExpr.name);
-  if (isValid(fnNameRes.id)) {
-    nameExpr.fnNameRes = fnNameRes;
-    return { fnNameRes.ownerID, {}, fnNameRes.id, true };
+  auto nameRes = _reg.resolveName(nameExpr.name);
+  if (auto fnNameID = std::get_if<FnNameID>(&nameRes.nameID)) {
+    return { nameRes.ownerID, {}, *fnNameID, true };
+  } else if (auto varInfo = std::get_if<VarInfo>(&nameRes.nameID)) {
+    return { nameRes.ownerID, varInfo->type, *varInfo, true };
   }
 
   return {};
+}
+
+NameResolutionResult
+TypedASTAnalyzer::resolveSelfExpr()
+{
+  TypeID type = _reg.getCurScopeOwnerID();
+
+  return { {}, type, type, true };
 }
 
 TypeID
@@ -535,7 +582,7 @@ TypedASTAnalyzer::typeOfMemberAccess(MemberAccess& membAccess)
   auto ownerID = baseRes.type;
 
   // if member access was already statically resolved
-  if (membAccess.resolved)
+  if (membAccess.resolvedChain)
     return inferType(membAccess.memb.back());
 
   return {};
@@ -575,18 +622,18 @@ TypedASTAnalyzer::typeOfArray(ArrayVal& val)
 TypeID
 TypedASTAnalyzer::typeOfName(NameExpr& nameExpr)
 {
-  if (!isValid(nameExpr.fnNameRes.id) && !isValid(nameExpr.varRes.varInfo.id)) {
+  if (!isValid(nameExpr.fnNameRes.id) && !isValid(nameExpr.varInfo.id)) {
     auto res = resolveNameExpr(nameExpr);
     if (!res.resolved)
       return {};
 
-    if (auto varRes = std::get_if<VarResolution>(&res.res))
-      return varRes->varInfo.type;
+    if (auto varInfo = std::get_if<VarInfo>(&res.res))
+      return varInfo->type;
     else if (auto fnRes = std::get_if<FnResolution>(&res.res))
       return fnRes->returnType;
   }
 
   // only resolve type of variable since we cant resolve function knowing only
   // its name
-  return nameExpr.varRes.varInfo.type;
+  return nameExpr.varInfo.type;
 }

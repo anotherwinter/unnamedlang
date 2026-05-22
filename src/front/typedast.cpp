@@ -1,4 +1,5 @@
 #include "front/typedast.h"
+#include "front/nodeallocator.h"
 #include "front/symbolregistry.h"
 #include "front/typedastanalyzer.h"
 #include "front/typedastbuilder.h"
@@ -9,9 +10,10 @@ using namespace HIR;
 TypedAST::TypedAST(Diagnostics& diag)
   : _diag(diag)
 {
+  _alloc = std::make_unique<NodeAllocator>(_diag);
   _reg = std::make_unique<SymbolRegistry>(_diag);
-  _builder = std::make_unique<TypedASTBuilder>(_diag, *_reg);
-  _analyzer = std::make_unique<TypedASTAnalyzer>(_diag, *_reg);
+  _builder = std::make_unique<TypedASTBuilder>(_diag, *_reg, *_alloc);
+  _analyzer = std::make_unique<TypedASTAnalyzer>(_diag, *_reg, *_alloc);
 }
 
 TypedAST::~TypedAST() {}
@@ -283,6 +285,11 @@ TypedAST::print(const TypedNode* node, int indent)
         printIndent(nextIndent);
         printf("%s\n", nameExpr.name);
       },
+      [&](const SelfExpr& selfExpr) {
+        printIndent(nextIndent);
+        printf("self\n");
+      }
+
     },
     node->node);
 }

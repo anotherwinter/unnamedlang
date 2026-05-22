@@ -1,8 +1,9 @@
 #include "front/scope.h"
 #include "front/symbolregistry.h"
 
-Scope::Scope(TypeID ownerID)
-  : _ownerID(ownerID)
+Scope::Scope(SymbolRegistry& reg, TypeID ownerID)
+  : _reg(reg)
+  , _ownerID(ownerID)
   , _arena()
 {
 }
@@ -15,19 +16,6 @@ Scope::reset()
   _arena.reset();
 }
 
-VarInfo*
-Scope::resolve(const std::string name)
-{
-  auto varID = resolveID(name);
-  if (isValid(varID)) {
-    auto varInfoIt = _variables.find(varID);
-    if (varInfoIt != _variables.end())
-      return &varInfoIt->second;
-  }
-
-  return {};
-}
-
 VarID
 Scope::declare(const std::string& name, TypeID type, Modifier mod)
 {
@@ -37,4 +25,29 @@ Scope::declare(const std::string& name, TypeID type, Modifier mod)
   _nameToVarID.insert({ name, info.id });
 
   return info.id;
+}
+
+NameResolution
+Scope::resolveName(const std::string& name)
+{
+  // 1. search in locals
+  auto nameIt = _nameToVarID.find(name);
+  if (nameIt != _nameToVarID.end()) {
+    auto varIt = _variables.find(nameIt->second);
+    if (varIt != _variables.end())
+      return { {}, varIt->second };
+  }
+
+  // 2. search in class members
+  if (isValid(_ownerID)) {
+    auto field = _reg.resolveField(_ownerID, name);
+    if (isValid(field.id))
+      return { _ownerID, field };
+
+    auto methodName = _reg.resolveMethodName(_ownerID, name);
+    if (isValid(methodName))
+      return { _ownerID, methodName };
+  }
+
+  return {};
 }

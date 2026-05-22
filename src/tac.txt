@@ -1,0 +1,7 @@
+store a, b
+
+
+t = load b
+t = loadref b
+
+

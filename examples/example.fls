@@ -4,3 +4,17 @@ whl (x > 0)
     print(x)
     x = x - 1
 }
+
+~ example of a class definition
+class Example {
+    fn change(Number val) {
+        var x = 3
+        a = val
+        b = x
+        3+5
+
+        ret a
+    }
+    
+    var a
+}

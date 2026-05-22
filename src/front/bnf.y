@@ -13,8 +13,8 @@
 };
 
 %code requires {
-#include "ast.h"
-#include "lexer.h"
+#include "front/ast.h"
+#include "front/lexer.h"
 #include "shared.h"
 #include <stack>
 
@@ -26,7 +26,7 @@ struct ParserContext
 
 %{
 #include <stdio.h>
-#include "bison_wrapper.h"
+#include "front/bison_wrapper.h"
 
 ASTNode* astRoot = NULL;
 %}
@@ -87,11 +87,12 @@ ASTNode* astRoot = NULL;
 /* program statements list */
 %type <node> opt_program_stmt_list
 %type <node> program_stmt_list
+%type <node> program_stmt_list_head
+%type <node> program_stmt_list_tail
 %type <node> program_stmt
 
 /* global statements */
 %type <node> global_stmt
-%type <node> global_stmt_stmt
 %type <node> class_def
 %type <node> fn_def
 %type <node> enum_stmt
@@ -104,6 +105,8 @@ ASTNode* astRoot = NULL;
 %type <node> code_block
 %type <node> opt_stmt_list
 %type <node> stmt_list
+%type <node> stmt_list_head
+%type <node> stmt_list_tail
 %type <node> code_block_or_stmt
 
 /* del statement */
@@ -198,6 +201,8 @@ ASTNode* astRoot = NULL;
 /* class definition */
 %type <node> opt_class_member_list
 %type <node> class_member_list
+%type <node> class_member_list_head
+%type <node> class_member_list_tail
 %type <node> class_member
 %type <modifier> class_member_mod_list
 %type <modifier> class_member_mod
@@ -242,7 +247,7 @@ ASTNode* astRoot = NULL;
     ;
 
     opt_program_stmt_list
-        : program_stmt_list opt_delimiter_list
+        : program_stmt_list
             {
                 $$ = $1;
             }
@@ -253,14 +258,32 @@ ASTNode* astRoot = NULL;
     ;
 
     program_stmt_list
-        : program_stmt_list delimiter_list program_stmt
+        : program_stmt_list_head program_stmt_list_tail
             {
-                astNodeLLAppend($1, $3);
+                astNodeLLConcat($1, $2);
                 $$ = $1;
             }
-        | program_stmt
+    ;
+
+    program_stmt_list_head
+        : opt_delimiter_list program_stmt
             {
-                $$ = newNodeList($1);
+                $$ = newNodeList($2);
+            }
+    ;
+
+    program_stmt_list_tail
+        : delimiter_list program_stmt program_stmt_list_tail
+            {
+                $$ = astNodeLLPrepend($3, $2);
+            }
+        | delimiter_list
+            {
+                $$ = NULL;
+            }
+        |
+            {
+                $$ = NULL;
             }
     ;
 
@@ -277,13 +300,6 @@ ASTNode* astRoot = NULL;
 
 /* global statement */
     global_stmt
-        : global_stmt_stmt
-            {
-                $$ = $1;
-            }
-    ;
-
-    global_stmt_stmt
         : class_def
             {
                 $$ = $1;
@@ -342,31 +358,40 @@ ASTNode* astRoot = NULL;
             {
                 $$ = $1;
             }
-        |
+        | opt_delimiter_list
             {
                 $$ = NULL;
             }
     ;
 
     stmt_list
+        : stmt_list_head stmt_list_tail
+            {
+                astNodeLLConcat($1, $2);
+                $$ = $1;
+            }
+    ;
+
+    stmt_list_head
         : opt_delimiter_list stmt_stmt
             {
-                ctx.nodeLLStack.push(newNodeList($2));
-            }
-          stmt_list_tail
-            {
-              $$ = ctx.nodeLLStack.top();
-              ctx.nodeLLStack.pop();
+                $$ = newNodeList($2);
             }
     ;
 
     stmt_list_tail
         : delimiter_list stmt_stmt stmt_list_tail
             {
-                astNodeLLAppend(ctx.nodeLLStack.top(), $2);
+                $$ = astNodeLLPrepend($3, $2);
             }
         | delimiter_list
+            {
+                $$ = NULL;
+            }
         |
+            {
+                $$ = NULL;
+            }
     ;
 
     code_block_or_stmt
@@ -1150,7 +1175,7 @@ ASTNode* astRoot = NULL;
 
 /* class definition */
     class_def
-        : CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list opt_delimiter_list RBRACE
+        : CLASS nameNode opt_delimiter_list LBRACE opt_class_member_list RBRACE
             {
                 $$ = newClassDef($2->data.stringValue, $5);
             }
@@ -1161,21 +1186,38 @@ ASTNode* astRoot = NULL;
             {
                 $$ = $1;
             }
-        |
+        | opt_delimiter_list
             {
                 $$ = NULL;
             }
 
-
     class_member_list
-        : class_member_list delimiter_list class_member
+        : class_member_list_head class_member_list_tail
             {
-                astNodeLLAppend($1, $3);
+                astNodeLLConcat($1, $2);
                 $$ = $1;
             }
-        | class_member
+    ;
+
+    class_member_list_head
+        : opt_delimiter_list class_member
             {
-                $$ = newNodeList($1);
+                $$ = newNodeList($2);
+            }
+    ;
+
+    class_member_list_tail
+        : delimiter_list class_member class_member_list_tail
+            {
+                $$ = astNodeLLPrepend($3, $2);
+            }
+        | delimiter_list
+            {
+                $$ = NULL;
+            }
+        |
+            {
+                $$ = NULL;
             }
     ;
 

@@ -296,16 +296,42 @@ astNodeLLCreate(ASTNode* node)
   return elem;
 }
 
+/* <--concat two LLs--> */
+void
+astNodeLLConcat(ASTNode* left, ASTNode* right)
+{
+  if (left == NULL || right == NULL)
+    return;
+
+  ASTNodeLL* it = left->data.nodeList.list;
+  while (it->next != NULL)
+    it = it->next;
+
+  it->next = right->data.nodeList.list;
+}
+
+/* <--prepend to LL of nodes--> */
+ASTNode*
+astNodeLLPrepend(ASTNode* list, ASTNode* node)
+{
+  ASTNode* prepend = newNodeList(node);
+  if (list != NULL)
+    prepend->data.nodeList.list->next = list->data.nodeList.list;
+
+  return prepend;
+}
+
 /* <--append to LL of nodes--> */
 void
 astNodeLLAppend(ASTNode* list, ASTNode* node)
 {
   if (list == NULL)
     return;
+
   ASTNodeLL* it = list->data.nodeList.list;
-  while (it->next != NULL) {
+  while (it->next != NULL)
     it = it->next;
-  }
+
   ASTNodeLL* newElem = astNodeLLCreate(node);
   it->next = newElem;
 }

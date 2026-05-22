@@ -1,6 +1,6 @@
 #pragma once
-#include "ast.h"
-#include "symbolregistry.h"
+#include "front/ast.h"
+#include "front/symbolregistry.h"
 #include <array>
 #include <cstddef>
 #include <memory>
@@ -30,6 +30,7 @@ enum class ExprOp : uint32_t
   LogicAnd,
   LogicOr,
   UnaryNeg,
+  UnaryArithmNeg,
   UnaryInc,
   UnaryDec,
   Assign,
@@ -196,7 +197,8 @@ struct MemberAccess
 {
   TypedNode* base;
   std::vector<TypedNode*> memb;
-  bool resolved = false;
+  bool resolvedChain = false;
+  bool resolvedBase = false;
 };
 
 struct BoolVal
@@ -222,8 +224,13 @@ struct ArrayVal
 struct NameExpr
 {
   const char* name;
-  VarResolution varRes;
+  VarInfo varInfo;
   FnNameResolution fnNameRes;
+};
+
+struct SelfExpr
+{
+  bool dummy;
 };
 
 struct TypedNode
@@ -290,9 +297,10 @@ struct Unanalyzed
 template<typename Tag>
 struct TypedTree
 {
-  const TypedNode* root;
+  TypedNode* root;
 };
 
+class NodeAllocator;
 class TypedASTBuilder;
 class TypedASTAnalyzer;
 
@@ -310,6 +318,7 @@ private:
   TypedAST(TypedAST&& other) = delete;
 
   Diagnostics& _diag;
+  std::unique_ptr<NodeAllocator> _alloc;
   std::unique_ptr<SymbolRegistry> _reg;
   std::unique_ptr<TypedASTBuilder> _builder;
   std::unique_ptr<TypedASTAnalyzer> _analyzer;
