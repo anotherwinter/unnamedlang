@@ -15,6 +15,9 @@ add_library(core
     ../src/front/symbolregistry.cpp
     ../src/front/scope.cpp
     ../src/front/nodeallocator.cpp
+    ../src/middle/tacbuilder.cpp
+    ../src/middle/ssastate.cpp
+    ../src/middle/layoutregistry.cpp
 )
 
 target_include_directories(core
@@ -35,6 +38,10 @@ target_link_libraries(test_parser core)
 add_executable(test_typedast test_typedast.cpp)
 target_compile_definitions(test_typedast PRIVATE DBG)
 target_link_libraries(test_typedast core)
+
+add_executable(test_tac test_tac.cpp)
+target_compile_definitions(test_tac PRIVATE DBG)
+target_link_libraries(test_tac core)
 
 file(GLOB EXAMPLE_FILES CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/examples/*"

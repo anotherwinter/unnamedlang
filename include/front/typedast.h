@@ -117,7 +117,7 @@ struct VarDecl
 
 struct VarAssign
 {
-  ExprOp op;
+  ExprOp op = ExprOp::Assign;
   TypedNode* lhs;
   TypedNode* rhs;
 };
@@ -199,6 +199,7 @@ struct MemberAccess
   std::vector<TypedNode*> memb;
   bool resolvedChain = false;
   bool resolvedBase = false;
+  bool reference = false;
 };
 
 struct BoolVal
@@ -226,6 +227,7 @@ struct NameExpr
   const char* name;
   VarInfo varInfo;
   FnNameResolution fnNameRes;
+  bool reference = true;
 };
 
 struct SelfExpr

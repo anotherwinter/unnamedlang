@@ -113,6 +113,8 @@ private:
   TypeID typeOfString(StringVal& val);
   TypeID typeOfArray(ArrayVal& val);
   TypeID typeOfName(NameExpr& nameExpr);
+
+  bool isPrimitiveType(TypeID type);
 };
 
 }

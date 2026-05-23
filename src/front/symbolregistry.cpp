@@ -155,11 +155,13 @@ SymbolRegistry::resolveVarCurScope(const std::string& name)
 }
 
 TypeID
-SymbolRegistry::beginDeclareClass(const std::string& name)
+SymbolRegistry::beginDeclareClass(const std::string& name,
+                                  bool isPrimitive,
+                                  bool isValueImmutable)
 {
   auto id = _typeID;
   _nameToTypeID.emplace(name, id);
-  _classes.emplace(id, ClassInfo{});
+  _classes.emplace(id, ClassInfo{id, isPrimitive, isValueImmutable});
   ++_typeID;
 
   return id;
@@ -167,8 +169,6 @@ SymbolRegistry::beginDeclareClass(const std::string& name)
 
 TypeID
 SymbolRegistry::finishDeclareClass(TypeID classID,
-                                   bool isPrimitive,
-                                   bool isValueImmutable,
                                    const std::vector<MethodDeclInfo>& methods,
                                    const std::vector<FieldDeclInfo>& fields)
 {
@@ -176,9 +176,6 @@ SymbolRegistry::finishDeclareClass(TypeID classID,
   auto classIt = _classes.find(classID);
   if (classIt == _classes.end())
     return {};
-
-  classIt->second.isPrimitive = isPrimitive;
-  classIt->second.isValueImmutable = isValueImmutable;
 
   auto fieldsMapPair = _fields.try_emplace(classID);
   if (!fieldsMapPair.second)

@@ -350,12 +350,12 @@ public:
 
   [[nodiscard]] NameResolution resolveVarCurScope(const std::string& name);
 
-  [[nodiscard]] TypeID beginDeclareClass(const std::string& name);
+  [[nodiscard]] TypeID beginDeclareClass(const std::string& name,
+                                         bool isPrimitive = false,
+                                         bool isValueImmutable = false);
 
   [[nodiscard]] TypeID finishDeclareClass(
     TypeID classID,
-    bool isPrimitive,
-    bool isValueImmutable,
     const std::vector<MethodDeclInfo>& methods,
     const std::vector<FieldDeclInfo>& fields);
 
@@ -380,7 +380,7 @@ public:
   void popScope();
 
   bool isGlobalScope();
-  
+
   TypeID getCurScopeOwnerID();
 
 private:

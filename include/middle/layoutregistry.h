@@ -10,7 +10,7 @@ namespace MIR
   struct FunctionLayout
   {
     // block that contains first instructions
-    Block begin;
+    BlockID begin;
   };
 
   struct FieldLayout
@@ -31,15 +31,19 @@ namespace MIR
   class LayoutRegistry
   {
   public:
-    LayoutRegistry(SymbolRegistry& symReg);
+    LayoutRegistry();
+    ~LayoutRegistry();
+
+    inline void addFnLayout(FunctionID id, FunctionLayout layout) {
+      _fnLayoutMap.emplace(id, layout);
+    }
 
   private:
     LayoutRegistry(const LayoutRegistry& other) = delete;
     LayoutRegistry(LayoutRegistry&& other) = delete;
 
-    FunctionLayout _fnLayoutMap;
+    FunctionLayoutMap _fnLayoutMap;
     ClassLayoutMap _classLayoutMap;
-    SymbolRegistry& _symReg;
   };
 
 }

@@ -9,7 +9,8 @@ whl (x > 0)
 class Example {
     fn change(Number val) {
         var x = 3
-        a = val
+        if (x > 0)
+            a = val
         b = x
         3+5
 

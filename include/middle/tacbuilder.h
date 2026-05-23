@@ -7,18 +7,19 @@
 namespace MIR {
 enum class OpCode : uint16_t
 {
-  Store,
-  RelOp,
+  // get operand without deref
+  Move,
+
+  // deref operand and get value
   Load,
-  LoadRef,
-  LoadSubs,
-  LoadSubsRef,
+
+  // get by val for primitives, and by ref for non-primitives
+  DynRead,
+
+  Store,
   Jmp,
   Call,
-  DynCall,
-  If,
-  Else,
-  IfRel,
+  CondJmp,
   Add,
   Sub,
   Mul,
@@ -29,12 +30,23 @@ enum class OpCode : uint16_t
   And,
   Or,
   Xor,
-  Neg,
+  Lt,
+  Gt,
+  Leq,
+  Geq,
+  Eq,
+  Neq,
+
+  LogicAnd,
+  LogicOr,
+
+  LogicNeg,
+  ArithmNeg,
   Inc,
   Dec,
   Get,
   GetRef,
-  Set,
+  Ret,
 };
 
 // id for value, produced by instruction
@@ -137,6 +149,24 @@ struct LiteralID
   }
 };
 
+inline constexpr bool
+isValid(ValueID id)
+{
+  return id.val != ValueID::invalidID;
+}
+
+inline constexpr bool
+isValid(BlockID id)
+{
+  return id.val != BlockID::invalidID;
+}
+
+inline constexpr bool
+isValid(LiteralID id)
+{
+  return id.val != LiteralID::invalidID;
+}
+
 struct BoolLiteral
 {
   bool val;
@@ -162,9 +192,41 @@ struct LiteralPayload
   std::variant<BoolLiteral, NumberLiteral, StringLiteral, ArrayLiteral> val;
 };
 
+enum class ValueType
+{
+  // immediates
+  ImmediateBool,
+  ImmediateDouble,
+
+  // string literal
+  Literal,
+
+  // value, produced by instruction
+  SSAValue,
+
+  // id for block of instructions
+  Block,
+
+  Place,
+  StaticFn,
+  Self,
+};
+
+enum class ValueSource
+{
+  Immediate,
+  Literal,
+  Computed,
+  Static,
+  Dynamic,
+  Self,
+};
+
 struct TACValue
 {
-  std::variant<ValueID, VarID, FnResolution, BlockID, LiteralID> id;
+  std::variant<ValueID, VarID, FunctionID, BlockID, LiteralID, bool, double> id;
+  ValueType type = ValueType::SSAValue;
+  ValueSource src = ValueSource::Computed;
 };
 
 struct Instruction
@@ -172,6 +234,12 @@ struct Instruction
   OpCode op;
   std::vector<TACValue> operands;
   ValueID res = {};
+};
+
+struct InstructionResult
+{
+  ValueID id = {};
+  TACValue val = {};
 };
 
 struct Block
@@ -197,8 +265,15 @@ private:
 
 struct MemberAccessContext
 {
-  ValueID base = {};
-  bool ref = false;
+  TACValue base = {};
+  bool place = false;
+  bool enabled = false;
+};
+
+struct BranchContext
+{
+  Block* current;
+  Block* alt;
 };
 
 class LayoutRegistry;
@@ -207,16 +282,21 @@ class SSAState;
 class TACBuilder
 {
 public:
-  TACBuilder(Diagnostics& diag, LayoutRegistry& layReg);
+  TACBuilder(Diagnostics& diag);
+  ~TACBuilder();
 
   inline Block* build(HIR::TypedTree<HIR::Analyzed> root)
   {
     // TODO: fix memleaks related to _last
-    _last = allocBlock();
+    Block* begin = allocBlock();
+    pushBranchCtx(begin);
     buildFromAST(root.root);
+    popBranchCtx();
 
-    return _last;
+    return begin;
   }
+
+  void print();
 
 private:
   TACBuilder(const TACBuilder& other) = delete;
@@ -224,43 +304,80 @@ private:
 
   Diagnostics& _diag;
   ArenaAlloc _arena;
-  Block* _last;
+
+  // currently active branches
+  std::vector<BranchContext> _branches;
+
+  std::unique_ptr<LayoutRegistry> _layReg;
   std::unique_ptr<SSAState> _ssa;
+
+  std::vector<Block*> _blocks;
+
+  BlockID _blockID = { 0 };
+
+  inline void addInstruction(Instruction i)
+  {
+    _branches.back().current->instructions.push_back(i);
+  }
+
+  inline BranchContext currentBranchCtx() { return _branches.back(); }
+
+  inline void pushBranchCtx(Block* current, Block* alt = nullptr)
+  {
+    _branches.push_back({ current, alt });
+  }
+
+  inline void popBranchCtx() { _branches.pop_back(); }
+
+  InstructionResult addAccessInstruction(TACValue expr,
+                                         MemberAccessContext ctx);
 
   Block* allocBlock();
 
-  ValueID buildFromAST(const HIR::TypedNode* node);
+  void buildFromAST(const HIR::TypedNode* node);
 
-  ValueID buildNodeList(const HIR::NodeList& list);
+  InstructionResult buildNodeList(const HIR::NodeList& list);
+  InstructionResult buildFnDef(const HIR::FnDef& fnDef);
+  InstructionResult buildClassDef(const HIR::ClassDef& classDef);
 
-  ValueID buildVarDecl(const HIR::VarDecl& varDecl);
-  ValueID buildVarAssign(const HIR::VarAssign& varAssign);
-  ValueID buildLoopWhl(const HIR::LoopWhl& loopWhl);
-  ValueID buildLoopFor(const HIR::LoopFor& loopFor);
-  ValueID buildIf(const HIR::StmtIf& stmtIf);
-  ValueID buildSwitch(const HIR::StmtSwitch& stmtSwitch);
-  ValueID buildRet(const HIR::StmtRet& stmtRet);
-  ValueID buildBrk(const HIR::StmtBrk& stmtBrk);
-  ValueID buildBinary(const HIR::BinaryExpr& binary);
-  ValueID buildUnary(const HIR::UnaryExpr& unary);
-  ValueID buildBool(const HIR::BoolVal& val);
-  ValueID buildNumber(const HIR::NumVal& val);
-  ValueID buildString(const HIR::StringVal& val);
-  ValueID buildArray(const HIR::ArrayVal& val);
-  ValueID buildName(const HIR::NameExpr& name);
+  InstructionResult buildVarDecl(const HIR::VarDecl& varDecl);
+  InstructionResult buildVarAssign(const HIR::VarAssign& varAssign);
+  InstructionResult buildLoopWhl(const HIR::LoopWhl& loopWhl);
+  InstructionResult buildLoopFor(const HIR::LoopFor& loopFor);
+  InstructionResult buildIf(const HIR::StmtIf& stmtIf);
+  InstructionResult buildSwitch(const HIR::StmtSwitch& stmtSwitch);
+  InstructionResult buildRet(const HIR::StmtRet& stmtRet);
+  InstructionResult buildBrk(const HIR::StmtBrk& stmtBrk);
 
-  ValueID buildExpr(const HIR::TypedNode* expr, bool ref = false);
+  InstructionResult buildPlace(const HIR::TypedNode* expr,
+                               MemberAccessContext ctx = {});
 
   // value only
-  ValueID buildCallExpr(const HIR::CallExpr& callExpr);
+  InstructionResult buildCallExpr(const HIR::CallExpr& callExpr);
+  InstructionResult buildBinary(const HIR::BinaryExpr& binary);
+  InstructionResult buildUnary(const HIR::UnaryExpr& unary);
+  InstructionResult buildBool(const HIR::BoolVal& val);
+  InstructionResult buildNumber(const HIR::NumVal& val);
+  InstructionResult buildString(const HIR::StringVal& val);
+  InstructionResult buildArray(const HIR::ArrayVal& val);
 
   // value / ref
-  ValueID buildMemberAccess(const HIR::MemberAccess& membAccess,
-                            bool ref = false);
-  ValueID buildArrayAccess(const HIR::ArrayAccess& arrAccess, MemberAccessContext ctx = {});
-  ValueID buildName(const HIR::NameExpr& name, MemberAccessContext ctx = {});
+  InstructionResult buildMemberAccess(const HIR::MemberAccess& membAccess,
+                                      MemberAccessContext ctx = {});
+  InstructionResult buildArrayAccess(const HIR::ArrayAccess& arrAccess,
+                                     MemberAccessContext ctx = {});
+  InstructionResult buildName(const HIR::NameExpr& name,
+                              MemberAccessContext ctx = {});
+  InstructionResult buildSelf(const HIR::SelfExpr& self,
+                              MemberAccessContext ctx);
 
-  ValueID buildCallArgument(const HIR::TypedNode* arg);
+  InstructionResult buildCallArgument(const HIR::TypedNode* arg);
+
+  void printInstruction(Instruction& instr);
+
+  const char* getOpCodeStr(OpCode op);
+
+  std::string tacValueToStr(TACValue val);
 };
 
 };

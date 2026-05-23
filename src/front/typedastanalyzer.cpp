@@ -456,6 +456,7 @@ TypedASTAnalyzer::resolveMemberAccess(MemberAccess& membAccess)
 
   _ignoreSelfInjecting = selfTemp;
   membAccess.resolvedChain = resolvedChain;
+  membAccess.reference = !isPrimitiveType(membOwnerType);
 
   return right;
 }
@@ -475,8 +476,12 @@ TypedASTAnalyzer::resolveNameExpr(NameExpr& nameExpr)
 {
   auto nameRes = _reg.resolveName(nameExpr.name);
   if (auto fnNameID = std::get_if<FnNameID>(&nameRes.nameID)) {
+    nameExpr.fnNameRes = { *fnNameID, nameRes.ownerID };
     return { nameRes.ownerID, {}, *fnNameID, true };
   } else if (auto varInfo = std::get_if<VarInfo>(&nameRes.nameID)) {
+    nameExpr.varInfo = *varInfo;
+    nameExpr.reference = !isPrimitiveType(varInfo->type);
+
     return { nameRes.ownerID, varInfo->type, *varInfo, true };
   }
 
@@ -636,4 +641,20 @@ TypedASTAnalyzer::typeOfName(NameExpr& nameExpr)
   // only resolve type of variable since we cant resolve function knowing only
   // its name
   return nameExpr.varInfo.type;
+}
+
+bool
+TypedASTAnalyzer::isPrimitiveType(TypeID type)
+{
+  if (!isValid(type))
+    return false;
+
+  if (type == _boolType)
+    return true;
+  if (type == _numberType)
+    return true;
+  if (type == _stringType)
+    return true;
+
+  return false;
 }

@@ -77,11 +77,11 @@ TypedASTBuilder::buildFromAST(const ASTNode* node)
 void
 TypedASTBuilder::predeclarePrebuilts()
 {
-  std::ignore = _reg.beginDeclareClass("dynamic");
-  std::ignore = _reg.beginDeclareClass("Bool");
-  std::ignore = _reg.beginDeclareClass("Number");
-  std::ignore = _reg.beginDeclareClass("String");
-  std::ignore = _reg.beginDeclareClass("Array");
+  std::ignore = _reg.beginDeclareClass("dynamic", false, true);
+  std::ignore = _reg.beginDeclareClass("Bool", true, true);
+  std::ignore = _reg.beginDeclareClass("Number", true, true);
+  std::ignore = _reg.beginDeclareClass("String", true, true);
+  std::ignore = _reg.beginDeclareClass("Array", false, true);
 }
 
 void
@@ -199,8 +199,7 @@ TypedASTBuilder::buildClassDef(const ASTNode* node)
     it = it->next;
   }
 
-  def.classID =
-    _reg.finishDeclareClass(def.classID, false, false, methods, fields);
+  def.classID = _reg.finishDeclareClass(def.classID, methods, fields);
 
   return n;
 }
