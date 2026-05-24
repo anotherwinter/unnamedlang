@@ -24,8 +24,8 @@ SymbolRegistry::declareFunction(const std::string& name,
   FnNameID nameID;
   if (it == _fnNameToID.end()) {
     _fnNameToID.try_emplace(name, _nameID);
-    ++_nameID.val;
     nameID = _nameID;
+    ++_nameID.val;
   } else
     nameID = it->second;
 
@@ -39,7 +39,7 @@ SymbolRegistry::declareFunction(const std::string& name,
   auto fnsIt = _functions.try_emplace(ownerID);
   auto overloadsIt = fnsIt.first->second.try_emplace(nameID);
   auto maskedOverloadsIt =
-    overloadsIt.first->second.try_emplace(makeFnParamBitmask(paramTypes));
+    overloadsIt.first->second.try_emplace(paramNames.size());
   insertFunctionOverload(inserted.first->second,
                          maskedOverloadsIt.first->second);
 
@@ -88,9 +88,9 @@ SymbolRegistry::resolveFunctionOverloads(FnNameID nameID,
   if (overloadsInnerIt == overloadsOuterIt->second.end())
     return nullptr;
 
-  auto overloadsByParamCount = overloadsInnerIt->second;
+  auto& overloadsByParamCount = overloadsInnerIt->second;
   auto overloadsIt = overloadsByParamCount.find(paramTypes.size());
-  // if overloads list exists for given param count
+  // if overloads list does not exist for given param count
   if (overloadsIt == overloadsByParamCount.end())
     return nullptr;
 
@@ -161,7 +161,7 @@ SymbolRegistry::beginDeclareClass(const std::string& name,
 {
   auto id = _typeID;
   _nameToTypeID.emplace(name, id);
-  _classes.emplace(id, ClassInfo{id, isPrimitive, isValueImmutable});
+  _classes.emplace(id, ClassInfo{ id, isPrimitive, isValueImmutable });
   ++_typeID;
 
   return id;

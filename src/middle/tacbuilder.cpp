@@ -177,7 +177,7 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
   auto lhs = buildPlace(varAssign.lhs, { {}, true });
   auto rhs = buildPlace(varAssign.rhs);
 
-  auto rhsID = rhs.id;
+  TACValue rhsOperand = rhs.val;
 
   if (varAssign.op > ExprOp::Assign) {
     OpCode op;
@@ -223,10 +223,10 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
     ValueID opVal = _ssa->makeValueID();
     Instruction binaryOp = { op, { TACValue{ loadVal }, rhs.val }, opVal };
     addInstruction(binaryOp);
-    rhsID = opVal;
+    rhsOperand = { opVal };
   }
 
-  Instruction store = { OpCode::Store, { TACValue{ rhsID }, lhs.val } };
+  Instruction store = { OpCode::Store, { rhsOperand, lhs.val } };
   addInstruction(store);
 
   return {};

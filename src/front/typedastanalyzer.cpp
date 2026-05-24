@@ -95,6 +95,8 @@ TypedASTAnalyzer::analyzeFnDef(TypedNode* node)
     return;
   }
 
+  delete overloads;
+
   _reg.pushScope(fnInfo->ownerID, fnInfo->id);
   analyzeTypedNode(fnDef.body);
   _reg.popScope();
@@ -111,10 +113,7 @@ TypedASTAnalyzer::analyzeCallExpr(TypedNode* node)
   auto callRes = resolveCallExpr(callExpr);
   if (callRes.resolved && !std::holds_alternative<FnResolution>(callRes.res)) {
     _diag.putMsg(STUB_ERR, node->line, node->col);
-
-  }
-
-  else if (callRes.resolved && !_ignoreSelfInjecting && !_reg.isGlobalScope()) {
+  } else if (callRes.resolved && shouldInjectSelf(callRes.ownerID)) {
     MemberAccess membAccess = {};
 
     auto callNode = _alloc.allocTypedNode<CallExpr>(node->line, node->col);
@@ -124,6 +123,10 @@ TypedASTAnalyzer::analyzeCallExpr(TypedNode* node)
     membAccess.memb.push_back(callNode);
 
     node->node = membAccess;
+  }
+  // put error if cant find function and in global scope
+  else if (!callRes.resolved && _reg.isGlobalScope()) {
+    _diag.putMsg(STUB_ERR, node->line, node->col);
   }
 }
 
@@ -175,6 +178,10 @@ void
 TypedASTAnalyzer::analyzeVarAssign(TypedNode* node)
 {
   auto& varAssign = std::get<VarAssign>(node->node);
+  // assign to self is not allowed
+  if (std::holds_alternative<SelfExpr>(varAssign.lhs->node))
+    _diag.putMsg(STUB_ERR, varAssign.lhs->line, varAssign.lhs->col);
+
   analyzeTypedNode(varAssign.lhs);
   analyzeTypedNode(varAssign.rhs);
 
@@ -312,8 +319,7 @@ TypedASTAnalyzer::analyzeMemberAccess(TypedNode* node)
   auto res = resolveMemberAccess(membAccess);
 
   // if not in global scope and injecting of "self" enabled
-  if (membAccess.resolvedBase && !_ignoreSelfInjecting &&
-      !_reg.isGlobalScope()) {
+  if (membAccess.resolvedBase && shouldInjectSelf(res.ownerID)) {
     membAccess.memb.insert(membAccess.memb.begin(), membAccess.base);
     membAccess.base = _alloc.allocTypedNode<SelfExpr>(node->line, node->col);
   }
@@ -365,7 +371,7 @@ TypedASTAnalyzer::analyzeName(TypedNode* node)
     return;
   }
 
-  if (!_ignoreSelfInjecting && isValid(nameRes.ownerID)) {
+  if (shouldInjectSelf(nameRes.ownerID)) {
     MemberAccess membAccess = {};
 
     TypedNode* nameNode =
@@ -415,9 +421,8 @@ TypedASTAnalyzer::resolveCallExpr(CallExpr& callExpr)
 
   std::vector<TypeID> types;
   for (auto& a : callExpr.args) {
-    auto argType = resolve(a);
-    if (!argType.resolved)
-      return {};
+    auto argRes = resolve(a);
+    types.push_back(argRes.type);
   }
 
   auto fnRes = _reg.resolveFunction(*fnNameID, types, calleeRes.ownerID);
@@ -515,6 +520,7 @@ TypedASTAnalyzer::inferType(TypedNode* node)
       [&](StringVal& val) { return typeOfString(val); },
       [&](ArrayVal& val) { return typeOfArray(val); },
       [&](NameExpr& nameExpr) { return typeOfName(nameExpr); },
+      [&](SelfExpr& selfExpr) { return typeOfSelfExpr(selfExpr); },
     },
     node->node);
 
@@ -643,6 +649,12 @@ TypedASTAnalyzer::typeOfName(NameExpr& nameExpr)
   return nameExpr.varInfo.type;
 }
 
+TypeID
+TypedASTAnalyzer::typeOfSelfExpr(SelfExpr& selfExpr)
+{
+  return _reg.getCurScopeOwnerID();
+}
+
 bool
 TypedASTAnalyzer::isPrimitiveType(TypeID type)
 {
@@ -657,4 +669,11 @@ TypedASTAnalyzer::isPrimitiveType(TypeID type)
     return true;
 
   return false;
+}
+
+bool
+TypedASTAnalyzer::shouldInjectSelf(TypeID ownerID)
+{
+  return !_ignoreSelfInjecting && !_reg.isGlobalScope() &&
+         ownerID == _reg.getCurScopeOwnerID();
 }

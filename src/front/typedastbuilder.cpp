@@ -70,7 +70,7 @@ TypedASTBuilder::buildFromAST(const ASTNode* node)
       return buildName(node);
     default:
       _diag.putMsg(STUB_ERR, node->line, node->col);
-      return _alloc.allocTypedNode();
+      return nullptr;
   }
 }
 

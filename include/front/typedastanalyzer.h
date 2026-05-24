@@ -113,8 +113,10 @@ private:
   TypeID typeOfString(StringVal& val);
   TypeID typeOfArray(ArrayVal& val);
   TypeID typeOfName(NameExpr& nameExpr);
+  TypeID typeOfSelfExpr(SelfExpr& selfExpr);
 
   bool isPrimitiveType(TypeID type);
+  bool shouldInjectSelf(TypeID ownerID);
 };
 
 }
