@@ -19,6 +19,7 @@ enum class OpCode : uint16_t
   Store,
   Jmp,
   Call,
+  Param,
   CondJmp,
   Add,
   Sub,
@@ -334,6 +335,7 @@ private:
 
   Block* allocBlock();
 
+  // pass1 - build TAC with SSA symbols
   void buildFromAST(const HIR::TypedNode* node);
 
   InstructionResult buildNodeList(const HIR::NodeList& list);
@@ -373,10 +375,11 @@ private:
 
   InstructionResult buildCallArgument(const HIR::TypedNode* arg);
 
+  // pass2 - add phi-functions to IR
+  void resolveSSA(Block* begin);
+
   void printInstruction(Instruction& instr);
-
   const char* getOpCodeStr(OpCode op);
-
   std::string tacValueToStr(TACValue val);
 };
 

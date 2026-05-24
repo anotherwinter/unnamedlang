@@ -97,8 +97,14 @@ TACBuilder::buildFromAST(const TypedNode* node)
       [&](const StmtRet& stmtRet) { buildRet(stmtRet); },
       [&](const StmtBrk& stmtBrk) { buildBrk(stmtBrk); },
       [&](const CallExpr& callExpr) { buildCallExpr(callExpr); },
-      [&](const BinaryExpr& binaryExpr) { buildBinary(binaryExpr); },
-      [&](const UnaryExpr& unaryExpr) { buildUnary(unaryExpr); },
+      [&](const BinaryExpr& binaryExpr) { return; },
+      [&](const UnaryExpr& unaryExpr) {
+        // unary expression as statement allowed only if its increment or
+        // decrement
+        if (unaryExpr.op == ExprOp::UnaryInc ||
+            unaryExpr.op == ExprOp::UnaryDec)
+          buildUnary(unaryExpr);
+      },
       [&](const MemberAccess& membAccess) { buildMemberAccess(membAccess); },
       [&](const ArrayAccess& arrAccess) { buildArrayAccess(arrAccess); },
       [&](const BoolVal& boolVal) { buildBool(boolVal); },
@@ -418,10 +424,11 @@ TACBuilder::buildCallExpr(const CallExpr& callExpr)
   for (auto& a : callExpr.args)
     buildCallArgument(a);
 
-  ValueID retVal = _ssa->makeValueID();
+  ValueID retVal;
 
   // if expression was resolved statically
   if (callExpr.resType == CallExpr::ResolutionType::Static) {
+    retVal = _ssa->makeValueID();
     addInstruction(
       { OpCode::Call,
         { TACValue{
@@ -431,6 +438,7 @@ TACBuilder::buildCallExpr(const CallExpr& callExpr)
   // if expression to be resolved dynamically
   else if (callExpr.resType == CallExpr::ResolutionType::Dynamic) {
     auto calleeVal = buildPlace(callExpr.callee, { {}, true });
+    retVal = _ssa->makeValueID();
 
     addInstruction({ OpCode::Call, { calleeVal.val }, retVal });
   }
@@ -540,40 +548,31 @@ TACBuilder::buildUnary(const UnaryExpr& unary)
 InstructionResult
 TACBuilder::buildBool(const BoolVal& val)
 {
-  ValueID id = _ssa->makeValueID();
   TACValue tacVal = { val.val,
                       ValueType::ImmediateBool,
                       ValueSource::Immediate };
-  Instruction load = { OpCode::Load, { tacVal }, id };
-  addInstruction(load);
 
-  return { id, tacVal };
+  return { {}, tacVal };
 }
 
 InstructionResult
 TACBuilder::buildNumber(const NumVal& val)
 {
-  ValueID id = _ssa->makeValueID();
   TACValue tacVal = { val.val,
                       ValueType::ImmediateDouble,
                       ValueSource::Immediate };
-  Instruction load = { OpCode::Load, { tacVal }, id };
-  addInstruction(load);
 
-  return { id, tacVal };
+  return { {}, tacVal };
 }
 
 InstructionResult
 TACBuilder::buildString(const StringVal& val)
 {
-  ValueID id = _ssa->makeValueID();
   TACValue tacVal = { _ssa->internalize(val.val),
                       ValueType::Literal,
                       ValueSource::Literal };
-  Instruction load = { OpCode::Load, { tacVal }, id };
-  addInstruction(load);
 
-  return { id, tacVal };
+  return { {}, tacVal };
 }
 
 InstructionResult
@@ -619,7 +618,6 @@ TACBuilder::buildName(const NameExpr& name, MemberAccessContext ctx)
 InstructionResult
 TACBuilder::buildSelf(const SelfExpr& self, MemberAccessContext ctx)
 {
-  ValueID id = _ssa->makeValueID();
   TACValue operand = { {}, ValueType::Self, ValueSource::Self };
 
   return addAccessInstruction(operand, ctx);
@@ -628,8 +626,16 @@ TACBuilder::buildSelf(const SelfExpr& self, MemberAccessContext ctx)
 InstructionResult
 TACBuilder::buildCallArgument(const HIR::TypedNode* arg)
 {
-  // STUB
+  auto res = buildPlace(arg);
+  Instruction param = { OpCode::Param, { res.val } };
+  addInstruction(param);
+
   return {};
+}
+
+void
+TACBuilder::resolveSSA(Block* begin)
+{
 }
 
 void
@@ -664,6 +670,8 @@ TACBuilder::getOpCodeStr(OpCode op)
       return "jmp";
     case OpCode::Call:
       return "call";
+    case OpCode::Param:
+      return "param";
     case OpCode::CondJmp:
       return "condjmp";
     case OpCode::Add:
