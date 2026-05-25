@@ -65,10 +65,7 @@ private:
   TypedNode* buildArray(const ASTNode* node);
   TypedNode* buildName(const ASTNode* node);
 
-  [[nodiscard]] FnDeclKey evalFnDecl(const ASTNode* node,
-                                     std::vector<std::string>& paramNames,
-                                     std::vector<TypeID>& paramTypes,
-                                     TypeID ownerID = dynamicTypeID);
+  [[nodiscard]] FnDeclKey evalFnDecl(const ASTNode* node, TypeID ownerID = {});
 };
 
 }

@@ -7,13 +7,12 @@
 
 using namespace HIR;
 
-TypedAST::TypedAST(Diagnostics& diag)
+TypedAST::TypedAST(Diagnostics& diag, SymbolRegistry& reg)
   : _diag(diag)
 {
   _alloc = std::make_unique<NodeAllocator>(_diag);
-  _reg = std::make_unique<SymbolRegistry>(_diag);
-  _builder = std::make_unique<TypedASTBuilder>(_diag, *_reg, *_alloc);
-  _analyzer = std::make_unique<TypedASTAnalyzer>(_diag, *_reg, *_alloc);
+  _builder = std::make_unique<TypedASTBuilder>(_diag, reg, *_alloc);
+  _analyzer = std::make_unique<TypedASTAnalyzer>(_diag, reg, *_alloc);
 }
 
 TypedAST::~TypedAST() {}

@@ -56,7 +56,6 @@ struct FnDef
   FunctionID fnID = {};
   TypeID ownerID = {};
   FnNameID nameID = {};
-  std::vector<TypeID> paramTypes;
   TypedNode* body;
 };
 
@@ -309,7 +308,7 @@ class TypedASTAnalyzer;
 class TypedAST
 {
 public:
-  TypedAST(Diagnostics& diag);
+  TypedAST(Diagnostics& diag, SymbolRegistry& reg);
   ~TypedAST();
   TypedTree<Unanalyzed> build(const ASTNode* root);
   TypedTree<Analyzed> analyze(TypedTree<Unanalyzed> root);
@@ -321,7 +320,6 @@ private:
 
   Diagnostics& _diag;
   std::unique_ptr<NodeAllocator> _alloc;
-  std::unique_ptr<SymbolRegistry> _reg;
   std::unique_ptr<TypedASTBuilder> _builder;
   std::unique_ptr<TypedASTAnalyzer> _analyzer;
 

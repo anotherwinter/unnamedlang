@@ -297,17 +297,19 @@ astNodeLLCreate(ASTNode* node)
 }
 
 /* <--concat two LLs--> */
-void
+ASTNode*
 astNodeLLConcat(ASTNode* left, ASTNode* right)
 {
   if (left == NULL || right == NULL)
-    return;
+    return NULL;
 
   ASTNodeLL* it = left->data.nodeList.list;
   while (it->next != NULL)
     it = it->next;
 
   it->next = right->data.nodeList.list;
+
+  return left;
 }
 
 /* <--prepend to LL of nodes--> */

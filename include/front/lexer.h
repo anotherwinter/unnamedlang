@@ -78,6 +78,22 @@ private:
       ++_col;
       ++_ptr;
     }
+
+    _eof = _ptr == _end;
+  }
+
+  inline void skipNewlinesAndSpaces()
+  {
+    while (match(' ') || match('\t') || match('\r') || match('\n')) {
+      if (match('\n') || (consume('\r') && match('\n'))) {
+        ++_line;
+        _col = 1;
+      } else
+        ++_col;
+      ++_ptr;
+    }
+
+    _eof = _ptr == _end;
   }
 
   inline void advance()

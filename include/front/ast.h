@@ -326,7 +326,7 @@ duplicateNode(ASTNode* node);
 void
 freeNode(ASTNode* node);
 
-void
+ASTNode*
 astNodeLLConcat(ASTNode* left, ASTNode* right);
 
 ASTNode*

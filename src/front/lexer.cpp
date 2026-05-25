@@ -66,6 +66,17 @@ Lexer::lexer()
     // handle LF line break
     case '\n': {
       tok.type = TokenType::DELIMITER;
+      // skip newlines and spaces
+      skipNewlinesAndSpaces();
+
+      tok.line = _line;
+      tok.col = _col;
+
+      // if encountered RBRACE, return it instead of delimiter
+      if (consume('}')) {
+        tok.type = TokenType::RBRACE;
+      }
+
       break;
     }
     case '-': {
@@ -130,6 +141,11 @@ Lexer::lexer()
     }
     case '{': {
       tok.type = TokenType::LBRACE;
+      // skip newlines and spaces
+      skipNewlinesAndSpaces();
+      tok.line = _line;
+      tok.col = _col;
+
       break;
     }
     case '}': {

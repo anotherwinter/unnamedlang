@@ -87,7 +87,6 @@ ASTNode* astRoot = NULL;
 /* program statements list */
 %type <node> opt_program_stmt_list
 %type <node> program_stmt_list
-%type <node> program_stmt_list_head
 %type <node> program_stmt_list_tail
 %type <node> program_stmt
 
@@ -105,7 +104,6 @@ ASTNode* astRoot = NULL;
 %type <node> code_block
 %type <node> opt_stmt_list
 %type <node> stmt_list
-%type <node> stmt_list_head
 %type <node> stmt_list_tail
 %type <node> code_block_or_stmt
 
@@ -201,7 +199,6 @@ ASTNode* astRoot = NULL;
 /* class definition */
 %type <node> opt_class_member_list
 %type <node> class_member_list
-%type <node> class_member_list_head
 %type <node> class_member_list_tail
 %type <node> class_member
 %type <modifier> class_member_mod_list
@@ -230,9 +227,9 @@ ASTNode* astRoot = NULL;
 %%
 /* -------GRAMMAR RULES------- */
     program
-        : opt_program_stmt_list
+        : opt_delimiter_list opt_program_stmt_list
             {
-                astRoot = $1;
+                astRoot = $2;
             }
     ;
 
@@ -251,24 +248,16 @@ ASTNode* astRoot = NULL;
             {
                 $$ = $1;
             }
-        | opt_delimiter_list
+        |
             {
                 $$ = NULL;
             }
     ;
 
     program_stmt_list
-        : program_stmt_list_head program_stmt_list_tail
+        : program_stmt program_stmt_list_tail
             {
-                astNodeLLConcat($1, $2);
-                $$ = $1;
-            }
-    ;
-
-    program_stmt_list_head
-        : opt_delimiter_list program_stmt
-            {
-                $$ = newNodeList($2);
+                $$ = astNodeLLConcat(newNodeList($1), $2);
             }
     ;
 
@@ -365,17 +354,9 @@ ASTNode* astRoot = NULL;
     ;
 
     stmt_list
-        : stmt_list_head stmt_list_tail
+        : stmt_stmt stmt_list_tail
             {
-                astNodeLLConcat($1, $2);
-                $$ = $1;
-            }
-    ;
-
-    stmt_list_head
-        : opt_delimiter_list stmt_stmt
-            {
-                $$ = newNodeList($2);
+                $$ = astNodeLLConcat(newNodeList($1), $2);
             }
     ;
 
@@ -383,10 +364,6 @@ ASTNode* astRoot = NULL;
         : delimiter_list stmt_stmt stmt_list_tail
             {
                 $$ = astNodeLLPrepend($3, $2);
-            }
-        | delimiter_list
-            {
-                $$ = NULL;
             }
         |
             {
@@ -497,7 +474,7 @@ ASTNode* astRoot = NULL;
     ;
 
     switch_stmt
-        : SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list opt_delimiter_list RBRACE 
+        : SWITCH LPAREN expr RPAREN LBRACE opt_switch_case_list RBRACE 
             {
                 $$ = newSwitchStmt($3, $6);
             }
@@ -556,9 +533,9 @@ ASTNode* astRoot = NULL;
     ;
 
     opt_else
-        : ELSE code_block_or_stmt
+        : delimiter_list ELSE code_block_or_stmt
             {
-                $$ = $2;
+                $$ = $3;
             }
         |                           %prec LOWER_THAN_ELSE
             {
@@ -984,13 +961,13 @@ ASTNode* astRoot = NULL;
     ;
 
     enum_element
-        : delimiter_list nameNode
+        : nameNode
             {
-                $$ = newEnumElement($2->data.stringValue, NULL);
+                $$ = newEnumElement($1->data.stringValue, NULL);
             }
-        | delimiter_list nameNode EQUALS expr
+        | nameNode EQUALS expr
             {
-                $$ = newEnumElement($2->data.stringValue, $4);
+                $$ = newEnumElement($1->data.stringValue, $3);
             }
     ;
 
@@ -1192,17 +1169,9 @@ ASTNode* astRoot = NULL;
             }
 
     class_member_list
-        : class_member_list_head class_member_list_tail
+        : class_member class_member_list_tail
             {
-                astNodeLLConcat($1, $2);
-                $$ = $1;
-            }
-    ;
-
-    class_member_list_head
-        : opt_delimiter_list class_member
-            {
-                $$ = newNodeList($2);
+                $$ = astNodeLLConcat(newNodeList($1), $2);
             }
     ;
 
@@ -1210,10 +1179,6 @@ ASTNode* astRoot = NULL;
         : delimiter_list class_member class_member_list_tail
             {
                 $$ = astNodeLLPrepend($3, $2);
-            }
-        | delimiter_list
-            {
-                $$ = NULL;
             }
         |
             {
