@@ -121,16 +121,13 @@ TypedASTBuilder::buildNodeList(const ASTNode* node)
 TypedNode*
 TypedASTBuilder::buildFnDef(const ASTNode* node, TypeID ownerID)
 {
-  std::vector<std::string> paramNames;
-  std::vector<TypeID> paramTypes;
-  FnDeclKey fnID = evalFnDecl(node, paramNames, paramTypes, ownerID);
+  FnDeclKey fnID = evalFnDecl(node, ownerID);
 
   TypedNode* n = _alloc.allocTypedNode<FnDef>(node);
   auto& def = std::get<FnDef>(n->node);
   def.fnID = fnID.id;
   def.ownerID = ownerID;
   def.nameID = fnID.nameID;
-  def.paramTypes = paramTypes;
   def.body = buildFromAST(node->data.fnDef.code);
 
   return n;
@@ -448,15 +445,14 @@ TypedASTBuilder::buildName(const ASTNode* node)
 }
 
 FnDeclKey
-TypedASTBuilder::evalFnDecl(const ASTNode* node,
-                            std::vector<std::string>& paramNames,
-                            std::vector<TypeID>& paramTypes,
-                            TypeID ownerID)
+TypedASTBuilder::evalFnDecl(const ASTNode* node, TypeID ownerID)
 {
   if (!node)
     return {};
 
   const char* fnName = node->data.fnDef.name;
+  std::vector<std::string> paramNames;
+  std::vector<TypeID> paramTypes;
 
   // fill in parameters
   ASTNodeLL* paramsIt = node->data.fnDef.params->data.nodeList.list;

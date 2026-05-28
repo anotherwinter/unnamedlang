@@ -300,8 +300,11 @@ astNodeLLCreate(ASTNode* node)
 ASTNode*
 astNodeLLConcat(ASTNode* left, ASTNode* right)
 {
-  if (left == NULL || right == NULL)
+  if (!left)
     return NULL;
+
+  if (!right)
+    return left;
 
   ASTNodeLL* it = left->data.nodeList.list;
   while (it->next != NULL)

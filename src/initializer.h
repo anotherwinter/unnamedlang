@@ -21,6 +21,7 @@ private:
   Lexer _lex;
   yy::parser _parser;
   ParserContext _parserCtx = {};
+  SymbolRegistry _symReg;
   HIR::TypedAST _typedAST;
   MIR::TACBuilder _tacBuilder;
 };

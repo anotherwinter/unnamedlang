@@ -2,6 +2,8 @@
 #include "alloc/arena.h"
 #include "front/symbolregistry.h"
 #include "front/typedast.h"
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace MIR {
@@ -13,13 +15,15 @@ enum class OpCode : uint16_t
   // deref operand and get value
   Load,
 
-  // get by val for primitives, and by ref for non-primitives
+  // dynamic read - reads operand appropriately to its type
+  // may get address or value
   DynRead,
 
   Store,
   Jmp,
   Call,
   Param,
+  LoadParam,
   CondJmp,
   Add,
   Sub,
@@ -48,6 +52,12 @@ enum class OpCode : uint16_t
   Get,
   GetRef,
   Ret,
+
+  // phi-function pseudoinstruction, first operand is destination
+  Phi,
+
+  SSADefine,
+  SSALoad,
 };
 
 // id for value, produced by instruction
@@ -205,12 +215,17 @@ enum class ValueType
   // value, produced by instruction
   SSAValue,
 
+  SSAIdentity,
+
   // id for block of instructions
   Block,
 
   Place,
   StaticFn,
   Self,
+
+  // used for SSA slots
+  Nothing,
 };
 
 enum class ValueSource
@@ -220,12 +235,31 @@ enum class ValueSource
   Computed,
   Static,
   Dynamic,
-  Self,
+
+  // for getting parameters
+  Parameter,
+};
+
+using SSAIdentityID = VarID;
+using SSAVersion = uint32_t;
+
+struct SSAIdentityState
+{
+  SSAIdentityID id;
+  SSAVersion ver;
 };
 
 struct TACValue
 {
-  std::variant<ValueID, VarID, FunctionID, BlockID, LiteralID, bool, double> id;
+  std::variant<bool,
+               double,
+               LiteralID,
+               ValueID,
+               SSAIdentityState,
+               SSAIdentityID,
+               FunctionID,
+               BlockID>
+    id;
   ValueType type = ValueType::SSAValue;
   ValueSource src = ValueSource::Computed;
 };
@@ -247,7 +281,6 @@ struct Block
 {
   BlockID id = {};
   std::vector<Instruction> instructions;
-  Block* next = nullptr;
 };
 
 struct ValueIDCounter
@@ -269,6 +302,7 @@ struct MemberAccessContext
   TACValue base = {};
   bool place = false;
   bool enabled = false;
+  bool ssaImmediate = false;
 };
 
 struct BranchContext
@@ -277,25 +311,38 @@ struct BranchContext
   Block* alt;
 };
 
+struct PhiFunction
+{
+  SSAIdentityID id;
+  SSAVersion ver;
+  std::vector<SSAVersion> choices;
+  ValueID res;
+};
+
+using IncomingVersionsMap =
+  std::unordered_map<SSAIdentityID, std::vector<SSAVersion>>;
+
+struct BlockContext
+{
+  std::unordered_map<SSAIdentityID, std::vector<Instruction*>> usedIdentities;
+  IncomingVersionsMap inVersions;
+  std::unordered_map<SSAIdentityID, SSAVersion> usedVersions;
+  std::unordered_map<SSAIdentityID, SSAVersion> outVersions;
+  std::unordered_set<SSAIdentityID> usedDefinitions;
+  std::unordered_map<SSAIdentityID, PhiFunction*> phiFunctions;
+  std::vector<Block*> outBlocks;
+};
+
 class LayoutRegistry;
 class SSAState;
 
 class TACBuilder
 {
 public:
-  TACBuilder(Diagnostics& diag);
+  TACBuilder(Diagnostics& diag, SymbolRegistry& symReg);
   ~TACBuilder();
 
-  inline Block* build(HIR::TypedTree<HIR::Analyzed> root)
-  {
-    // TODO: fix memleaks related to _last
-    Block* begin = allocBlock();
-    pushBranchCtx(begin);
-    buildFromAST(root.root);
-    popBranchCtx();
-
-    return begin;
-  }
+  Block* build(HIR::TypedTree<HIR::Analyzed> root);
 
   void print();
 
@@ -304,6 +351,7 @@ private:
   TACBuilder(TACBuilder&& other) = delete;
 
   Diagnostics& _diag;
+  SymbolRegistry& _symReg;
   ArenaAlloc _arena;
 
   // currently active branches
@@ -316,6 +364,10 @@ private:
 
   BlockID _blockID = { 0 };
 
+  std::unordered_map<BlockID::__BlockID, BlockContext> _ssaBlocksMap;
+  std::unordered_map<SSAIdentityID, std::unordered_map<SSAVersion, PhiFunction>>
+    _phiFunctions;
+
   inline void addInstruction(Instruction i)
   {
     _branches.back().current->instructions.push_back(i);
@@ -323,12 +375,9 @@ private:
 
   inline BranchContext currentBranchCtx() { return _branches.back(); }
 
-  inline void pushBranchCtx(Block* current, Block* alt = nullptr)
-  {
-    _branches.push_back({ current, alt });
-  }
+  void pushBranchCtx(Block* current, Block* alt = nullptr);
 
-  inline void popBranchCtx() { _branches.pop_back(); }
+  void popBranchCtx();
 
   InstructionResult addAccessInstruction(TACValue expr,
                                          MemberAccessContext ctx);
@@ -375,8 +424,27 @@ private:
 
   InstructionResult buildCallArgument(const HIR::TypedNode* arg);
 
-  // pass2 - add phi-functions to IR
-  void resolveSSA(Block* begin);
+  void injectParameter(VarID id, const char* name, TACValue val);
+
+  // pass2 - SSA construction
+  void resolveSSA();
+
+  void resolveIdentities();
+
+  void propagateVersions(BlockContext& ctx, std::vector<Block*>& worklist);
+
+  void ensurePhi(BlockContext& ctx,
+                 SSAIdentityID id,
+                 std::vector<SSAVersion>& versions);
+
+  void makePhi(BlockContext& ctx,
+               SSAIdentityID id,
+               const std::vector<SSAVersion>& versions);
+
+  std::set<SSAVersion> unfoldVersions(SSAIdentityID id,
+                                      const std::vector<SSAVersion>& versions);
+
+  void insertPhi(Block* b, PhiFunction& phi);
 
   void printInstruction(Instruction& instr);
   const char* getOpCodeStr(OpCode op);

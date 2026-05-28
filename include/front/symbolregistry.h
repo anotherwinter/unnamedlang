@@ -205,9 +205,16 @@ enum class OperatorID : FnNameID::__FnNameID
   _Count
 };
 
+struct ParameterInfo
+{
+  std::string name;
+  TypeID type = {};
+  VarID id = {};
+};
+
 struct FunctionInfo
 {
-  std::vector<std::string> paramNames;
+  std::vector<ParameterInfo> params;
   std::vector<TypeID> paramTypes;
 
   // id for each function - has to be unique between global functions, but may
@@ -374,9 +381,11 @@ public:
 
   [[nodiscard]] VarInfo* resolveField(VarID id, TypeID ownerID);
 
-  // push new scope. optional typeid parameter also declares fields from
-  // specified class
-  void pushScope(TypeID ownerID = {}, FunctionID fnID = {});
+  // push new scope.
+  // optional reset allows to pass varid counter from last scope
+  // optional typeid parameter also declares fields from specified class
+  // same for function
+  void pushScope(TypeID ownerID = {}, FunctionID fnID = {}, bool reset = false);
   void popScope();
 
   bool isGlobalScope();

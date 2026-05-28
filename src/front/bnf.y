@@ -533,9 +533,9 @@ ASTNode* astRoot = NULL;
     ;
 
     opt_else
-        : delimiter_list ELSE code_block_or_stmt
+        : ELSE code_block_or_stmt
             {
-                $$ = $3;
+                $$ = $2;
             }
         |                           %prec LOWER_THAN_ELSE
             {

@@ -97,7 +97,7 @@ TypedASTAnalyzer::analyzeFnDef(TypedNode* node)
 
   delete overloads;
 
-  _reg.pushScope(fnInfo->ownerID, fnInfo->id);
+  _reg.pushScope(fnInfo->ownerID, fnInfo->id, true);
   analyzeTypedNode(fnDef.body);
   _reg.popScope();
 }
@@ -123,10 +123,6 @@ TypedASTAnalyzer::analyzeCallExpr(TypedNode* node)
     membAccess.memb.push_back(callNode);
 
     node->node = membAccess;
-  }
-  // put error if cant find function and in global scope
-  else if (!callRes.resolved && _reg.isGlobalScope()) {
-    _diag.putMsg(STUB_ERR, node->line, node->col);
   }
 }
 
@@ -214,7 +210,9 @@ TypedASTAnalyzer::analyzeWhl(TypedNode* node)
 {
   auto& loopWhl = std::get<LoopWhl>(node->node);
   analyzeTypedNode(loopWhl.cond);
+  _reg.pushScope();
   analyzeTypedNode(loopWhl.body);
+  _reg.popScope();
 }
 
 void
@@ -228,8 +226,14 @@ TypedASTAnalyzer::analyzeIf(TypedNode* node)
 {
   auto& stmtIf = std::get<StmtIf>(node->node);
   analyzeTypedNode(stmtIf.cond);
+
+  _reg.pushScope();
   analyzeTypedNode(stmtIf.body);
+  _reg.popScope();
+
+  _reg.pushScope();
   analyzeTypedNode(stmtIf.elseBody);
+  _reg.popScope();
 }
 
 void
@@ -449,7 +453,7 @@ TypedASTAnalyzer::resolveMemberAccess(MemberAccess& membAccess)
   NameResolutionResult right;
   bool resolvedChain = true;
   for (auto& m : membAccess.memb) {
-    _reg.pushScope(membOwnerType);
+    _reg.pushScope(membOwnerType, {}, true);
     right = resolve(m);
     if (!right.resolved)
       resolvedChain = false;

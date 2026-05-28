@@ -33,7 +33,20 @@ SymbolRegistry::declareFunction(const std::string& name,
   if (isValid(fnRes.id))
     return { fnRes.id, nameID };
 
-  FunctionInfo fnInfo = { paramNames, paramTypes, _fnID, ownerID };
+  FunctionInfo fnInfo = { {}, paramTypes, _fnID, ownerID };
+  // leave some indices for implicit parameters if defining method
+  // TODO: move this out or make it more explicit
+  VarID paramIdx = VarID{ 0 };
+  if (isValid(ownerID)) {
+    fnInfo.params.push_back({ "self", ownerID, paramIdx });
+    ++paramIdx;
+  }
+
+  for (size_t i = 0; i < paramNames.size(); ++i) {
+    fnInfo.params.push_back({ paramNames[i], paramTypes[i], paramIdx });
+    ++paramIdx;
+  }
+
   auto inserted = _fnInfoStorage.emplace(_fnID, fnInfo);
 
   auto fnsIt = _functions.try_emplace(ownerID);
@@ -125,8 +138,8 @@ SymbolRegistry::resolveFunctionOverloads(FnNameID nameID,
 NameResolution
 SymbolRegistry::resolveName(const std::string& name)
 {
-  for (auto& s : _scopes) {
-    auto res = s->resolveName(name);
+  for (size_t i = _scopes.size() - 1; i >= 0; --i) {
+    auto res = _scopes.at(i)->resolveName(name);
     if (!std::holds_alternative<std::monostate>(res.nameID))
       return res;
   }
@@ -272,15 +285,19 @@ SymbolRegistry::resolveField(VarID id, TypeID ownerID)
 }
 
 void
-SymbolRegistry::pushScope(TypeID ownerID, FunctionID fnID)
+SymbolRegistry::pushScope(TypeID ownerID, FunctionID fnID, bool reset)
 {
-  _scopes.emplace_back(std::make_unique<Scope>(*this, ownerID));
+  VarIDCounter* counter = nullptr;
+  if (!_scopes.empty())
+    counter = reset ? counter : _scopes.back()->getCounter();
+
+  _scopes.emplace_back(std::make_unique<Scope>(*this, ownerID, counter));
   if (isValid(fnID)) {
     auto fnInfo = resolveFunction(fnID);
     if (fnInfo) {
-      for (size_t i = 0; i < fnInfo->paramNames.size(); ++i) {
-        auto varID = _scopes.back()->declare(
-          fnInfo->paramNames[i], fnInfo->paramTypes[i], {});
+      for (size_t i = 0; i < fnInfo->params.size(); ++i) {
+        auto& param = fnInfo->params[i];
+        auto varID = _scopes.back()->declare(param.name, param.type, {});
       }
     }
   }

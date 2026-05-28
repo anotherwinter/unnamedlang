@@ -1,31 +1,32 @@
 #pragma once
-#include "front/symbolregistry.h"
 #include "middle/tacbuilder.h"
-#include <string>
 #include <unordered_map>
 
 namespace MIR {
-struct Binding
-{
-  std::string name;
-  std::vector<ValueID> values;
-};
-
 struct ScopedBindingInfo
 {
-  VarID id;
-  size_t firstIndex;
+  SSAIdentityID id;
+  SSAVersion lastVersion;
 };
-
-using VariablesMap = std::unordered_map<std::string, Binding>;
-using ValueStorage = std::vector<TACValue>;
-using StringStorage = std::vector<const char*>;
-using StringsMap = std::unordered_map<const char*, LiteralID>;
 
 struct SSAScope
 {
-  std::vector<ScopedBindingInfo> _bindings;
+  std::unordered_map<SSAIdentityID, SSAVersion> _bindings;
 };
+
+struct SSAIdentity
+{
+  SSAIdentityID id;
+  SSAVersion ver;
+  LiteralID nameID;
+};
+
+using IdentityMap = std::unordered_map<SSAIdentityID, SSAIdentity>;
+using IdentityValuesMap =
+  std::unordered_map<SSAIdentityID, std::vector<TACValue>>;
+using ValueStorage = std::vector<TACValue>;
+using StringStorage = std::vector<const char*>;
+using StringsMap = std::unordered_map<std::string, LiteralID>;
 
 class SSAState
 {
@@ -35,10 +36,44 @@ public:
 
   inline ValueID makeValueID() { return _valCounter.inc(); }
 
-  void declare(VarID id, Binding bind);
-  void assign(VarID id, ValueID val);
+  inline bool isIdentityDefined(SSAIdentityID id, bool curScope = false)
+  {
+    auto it = _identities.find(id);
+    if (it == _identities.end())
+      return false;
+
+    if (curScope) {
+      if (_scopes.empty())
+        return false;
+
+      auto& curBindings = _scopes.back()._bindings;
+
+      return curBindings.find(it->second.id) != curBindings.end();
+    }
+
+    return true;
+  }
+
+  inline SSAVersion getCurVersion(SSAIdentityID id)
+  {
+    auto it = _identities.find(id);
+    if (it == _identities.end())
+      return {};
+
+    return it->second.ver;
+  }
+
+  // add new identity into ssa returns id for new or existing identity
+  SSAIdentityState getIdentityState(SSAIdentityID id, const char* name = nullptr);
+  SSAVersion assign(SSAIdentityID id, TACValue val);
+
+  const char* getIdentityStr(SSAIdentityID id);
 
   LiteralID internalize(const char* val);
+
+  void pushScope();
+
+  void popScope();
 
 private:
   SSAState(const SSAState& other) = delete;
@@ -46,11 +81,13 @@ private:
 
   LiteralID _literalID = { 0 };
 
-  VariablesMap _varMap;
-  ValueStorage _valStorage;
+  IdentityMap _identities;
+  IdentityValuesMap _identityVals;
   ValueIDCounter _valCounter;
   StringStorage _stringStorage;
   StringsMap _stringsMap;
+
+  std::vector<SSAScope> _scopes;
 };
 
 };

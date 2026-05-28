@@ -1,11 +1,23 @@
 #include "front/scope.h"
-#include "front/symbolregistry.h"
 
-Scope::Scope(SymbolRegistry& reg, TypeID ownerID)
+Scope::Scope(SymbolRegistry& reg, TypeID ownerID, VarIDCounter* varCounter)
   : _reg(reg)
   , _ownerID(ownerID)
   , _arena()
 {
+  if (varCounter) {
+    _varCounter = varCounter;
+    _ownsCounter = false;
+  } else {
+    _varCounter = new VarIDCounter();
+    _ownsCounter = true;
+  }
+}
+
+Scope::~Scope()
+{
+  if (_ownsCounter)
+    delete _varCounter;
 }
 
 void
@@ -19,8 +31,7 @@ Scope::reset()
 VarID
 Scope::declare(const std::string& name, TypeID type, Modifier mod)
 {
-  VarInfo info = { _varID, type, mod };
-  ++_varID;
+  VarInfo info = { _varCounter->inc(), type, mod };
   _variables.insert({ info.id, info });
   _nameToVarID.insert({ name, info.id });
 
