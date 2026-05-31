@@ -138,8 +138,8 @@ SymbolRegistry::resolveFunctionOverloads(FnNameID nameID,
 NameResolution
 SymbolRegistry::resolveName(const std::string& name)
 {
-  for (size_t i = _scopes.size() - 1; i >= 0; --i) {
-    auto res = _scopes.at(i)->resolveName(name);
+  for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it) {
+    auto res = it->get()->resolveName(name);
     if (!std::holds_alternative<std::monostate>(res.nameID))
       return res;
   }

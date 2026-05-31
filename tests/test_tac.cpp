@@ -20,8 +20,13 @@ main(int argc, char* argv[])
     if (init.getParser().parse() == 0) {
       auto tree = init.getTypedAST().build(astRoot);
       auto analyzedTree = init.getTypedAST().analyze(tree);
-      init.getTACBuilder().build(analyzedTree);
-      init.getTACBuilder().print();
+      auto blocks = init.getTAC().build(analyzedTree);
+      printf("\nBEFORE opt:\n");
+      init.getTAC().print(*blocks.blocks);
+
+      auto optimizedBlocks = init.getTAC().optimize(blocks);
+      printf("\nAFTER opt:\n");
+      init.getTAC().print(*optimizedBlocks.blocks);
 
       auto id = init.getDiag().getLastMsgID();
       if (isValid(id)) {

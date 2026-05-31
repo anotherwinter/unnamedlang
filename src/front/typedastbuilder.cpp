@@ -455,16 +455,18 @@ TypedASTBuilder::evalFnDecl(const ASTNode* node, TypeID ownerID)
   std::vector<TypeID> paramTypes;
 
   // fill in parameters
-  ASTNodeLL* paramsIt = node->data.fnDef.params->data.nodeList.list;
-  while (paramsIt) {
-    const char* paramName = paramsIt->node->data.paramInfo.name;
-    const char* paramType =
-      paramsIt->node->data.paramInfo.type->data.stringValue;
+  if (node->data.fnDef.params) {
+    ASTNodeLL* paramsIt = node->data.fnDef.params->data.nodeList.list;
+    while (paramsIt) {
+      const char* paramName = paramsIt->node->data.paramInfo.name;
+      const char* paramType =
+        paramsIt->node->data.paramInfo.type->data.stringValue;
 
-    paramNames.push_back(paramName);
-    paramTypes.push_back(_reg.resolveClass(paramType));
+      paramNames.push_back(paramName);
+      paramTypes.push_back(_reg.resolveClass(paramType));
 
-    paramsIt = paramsIt->next;
+      paramsIt = paramsIt->next;
+    }
   }
 
   auto declKey = _reg.declareFunction(fnName, paramNames, paramTypes, ownerID);

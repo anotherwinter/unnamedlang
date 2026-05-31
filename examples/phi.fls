@@ -1,12 +1,15 @@
-var x = 5
+    var x = 5
+    var y = x
+    var a = 10 + 3
+    var b = a * 1
 
-if (x > 0)
-{
-    var x = 1
-    x = x + 1
-} else {
-    var x = 1
-    x = x + 1
-}
+    if (true) {
+        var c = b * 8
+        print(c)
+    } else {
+        var d = b + 0
+        print(d)
+    }
 
-ret x
+    var e = y + 0
+    ret e

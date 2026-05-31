@@ -12,6 +12,8 @@ public:
     return tmp;
   }
 
+  inline void reset() { val = { 0 }; }
+
 private:
   VarID val = { 0 };
 };

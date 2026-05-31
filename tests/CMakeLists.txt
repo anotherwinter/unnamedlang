@@ -15,9 +15,12 @@ add_library(core
     ../src/front/symbolregistry.cpp
     ../src/front/scope.cpp
     ../src/front/nodeallocator.cpp
-    ../src/middle/tacbuilder.cpp
+    ../src/middle/tac.cpp
     ../src/middle/ssastate.cpp
     ../src/middle/layoutregistry.cpp
+    ../src/middle/tacbuilder.cpp
+    ../src/middle/tacoptimizer.cpp
+    ../src/middle/foldfunctions.cpp
 )
 
 target_include_directories(core

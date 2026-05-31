@@ -7,6 +7,6 @@ Initializer::Initializer()
   , _parser(_lex, _parserCtx)
   , _symReg(_diag)
   , _typedAST(_diag, _symReg)
-  , _tacBuilder(_diag, _symReg)
+  , _tac(_diag, _symReg)
 {
 }

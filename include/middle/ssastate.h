@@ -1,5 +1,5 @@
 #pragma once
-#include "middle/tacbuilder.h"
+#include "middle/tac.h"
 #include <unordered_map>
 
 namespace MIR {
@@ -63,8 +63,21 @@ public:
     return it->second.ver;
   }
 
+  inline void reset()
+  {
+    _literalID = { 0 };
+
+    _identities.clear();
+    _identityVals.clear();
+    _valCounter.reset();
+    _stringStorage.clear();
+    _stringsMap.clear();
+    _scopes.clear();
+  }
+
   // add new identity into ssa returns id for new or existing identity
-  SSAIdentityState getIdentityState(SSAIdentityID id, const char* name = nullptr);
+  SSAIdentityState getIdentityState(SSAIdentityID id,
+                                    const char* name = nullptr);
   SSAVersion assign(SSAIdentityID id, TACValue val);
 
   const char* getIdentityStr(SSAIdentityID id);

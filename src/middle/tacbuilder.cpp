@@ -3,6 +3,7 @@
 #include "front/symbolregistry.h"
 #include "middle/layoutregistry.h"
 #include "middle/ssastate.h"
+#include "middle/tac.h"
 #include <cstdio>
 #include <string>
 #include <unordered_map>
@@ -13,14 +14,17 @@
 using namespace MIR;
 using namespace HIR;
 
-TACBuilder::TACBuilder(Diagnostics& diag, SymbolRegistry& symReg)
+TACBuilder::TACBuilder(Diagnostics& diag,
+                       SymbolRegistry& symReg,
+                       LayoutRegistry& layReg,
+                       SSAState& ssa)
   : _diag(diag)
   , _symReg(symReg)
   , _arena()
+  , _layReg(layReg)
+  , _ssa(ssa)
 
 {
-  _layReg = std::make_unique<LayoutRegistry>();
-  _ssa = std::make_unique<SSAState>();
 }
 
 TACBuilder::~TACBuilder()
@@ -29,9 +33,19 @@ TACBuilder::~TACBuilder()
     b->~Block();
 }
 
-Block*
+TACBlocks<Unoptimized>
 TACBuilder::build(HIR::TypedTree<HIR::Analyzed> root)
 {
+  _branches.clear();
+  for (auto& b : _blocks)
+    b->~Block();
+
+  _blocks.clear();
+  _ssaBlocksMap.clear();
+  _phiFunctions.clear();
+
+  _arena.reset();
+
   // TODO: fix memleaks related to begin
   Block* begin = allocBlock();
   pushBranchCtx(begin);
@@ -39,31 +53,20 @@ TACBuilder::build(HIR::TypedTree<HIR::Analyzed> root)
   resolveSSA();
   popBranchCtx();
 
-  return begin;
-}
-
-void
-TACBuilder::print()
-{
-  for (auto& b : _blocks) {
-    printf("\nblock %u:\n", b->id.val);
-    for (auto& i : b->instructions) {
-      printInstruction(i);
-    }
-  }
+  return { begin, &_blocks };
 }
 
 void
 TACBuilder::pushBranchCtx(Block* current, Block* alt)
 {
   _branches.push_back({ current, alt });
-  _ssa->pushScope();
+  _ssa.pushScope();
 }
 
 void
 TACBuilder::popBranchCtx()
 {
-  _ssa->popScope();
+  _ssa.popScope();
   _branches.pop_back();
 }
 
@@ -71,7 +74,7 @@ InstructionResult
 TACBuilder::addAccessInstruction(TACValue expr, MemberAccessContext ctx)
 
 {
-  ValueID id = _ssa->makeValueID();
+  ValueID id = _ssa.makeValueID();
   OpCode op;
   std::vector<TACValue> operands;
   if (ctx.enabled) {
@@ -106,6 +109,21 @@ TACBuilder::allocBlock()
   ++_blockID;
 
   return b;
+}
+
+Instruction*
+TACBuilder::allocInstruction(Instruction i)
+{
+  void* raw = _arena.alloc(sizeof(Instruction), alignof(Instruction));
+  if (!raw) {
+    _diag.putMsg(STUB_ERR, 0, 0);
+    return nullptr;
+  }
+
+  Instruction* instr = new (raw) Instruction();
+  *instr = i;
+
+  return instr;
 }
 
 void
@@ -172,7 +190,7 @@ TACBuilder::buildFnDef(const FnDef& fnDef)
   buildFromAST(fnDef.body);
   popBranchCtx();
 
-  _layReg->addFnLayout(fnDef.fnID, { b->id });
+  _layReg.addFnLayout(fnDef.fnID, { b->id });
 
   return {};
 }
@@ -196,11 +214,11 @@ TACBuilder::buildVarDecl(const VarDecl& varDecl)
     auto rhs = buildPlace(varDecl.val);
 
     // if lhs is ssa identity, then update ssa state for it
-    auto idState = _ssa->getIdentityState(varDecl.id, varDecl.name);
-    idState.ver = _ssa->assign(idState.id, rhs.val);
+    auto idState = _ssa.getIdentityState(varDecl.id, varDecl.name);
+    idState.ver = _ssa.assign(idState.id, rhs.val);
     TACValue lhs = { idState, ValueType::SSAIdentity, ValueSource::Computed };
 
-    ValueID loadVal = _ssa->makeValueID();
+    ValueID loadVal = _ssa.makeValueID();
     Instruction load = { OpCode::Load, { rhs.val }, loadVal };
     addInstruction(load);
 
@@ -257,11 +275,11 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
         break;
     }
 
-    ValueID loadVal = _ssa->makeValueID();
+    ValueID loadVal = _ssa.makeValueID();
     Instruction load = { OpCode::Load, { lhs.val }, loadVal };
     addInstruction(load);
 
-    ValueID opVal = _ssa->makeValueID();
+    ValueID opVal = _ssa.makeValueID();
     Instruction binaryOp = { op, { TACValue{ loadVal }, rhs.val }, opVal };
     addInstruction(binaryOp);
     rhsOperand = { opVal };
@@ -270,7 +288,7 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
   // if lhs is ssa identity, then update ssa state for it
   if (lhs.val.type == ValueType::SSAIdentity) {
     auto& ssaId = std::get<SSAIdentityState>(lhs.val.id);
-    ssaId.ver = _ssa->assign(ssaId.id, rhsOperand);
+    ssaId.ver = _ssa.assign(ssaId.id, rhsOperand);
   }
 
   Instruction store = { OpCode::Store, { rhsOperand, lhs.val } };
@@ -480,7 +498,7 @@ TACBuilder::buildCallExpr(const CallExpr& callExpr)
 
   // if expression was resolved statically
   if (callExpr.resType == CallExpr::ResolutionType::Static) {
-    retVal = _ssa->makeValueID();
+    retVal = _ssa.makeValueID();
     addInstruction(
       { OpCode::Call,
         { TACValue{
@@ -490,7 +508,7 @@ TACBuilder::buildCallExpr(const CallExpr& callExpr)
   // if expression to be resolved dynamically
   else if (callExpr.resType == CallExpr::ResolutionType::Dynamic) {
     auto calleeVal = buildPlace(callExpr.callee, { {}, true });
-    retVal = _ssa->makeValueID();
+    retVal = _ssa.makeValueID();
 
     addInstruction({ OpCode::Call, { calleeVal.val }, retVal });
   }
@@ -564,7 +582,7 @@ TACBuilder::buildBinary(const BinaryExpr& binary)
       break;
   }
 
-  ValueID opVal = _ssa->makeValueID();
+  ValueID opVal = _ssa.makeValueID();
   Instruction binaryInstr = { op, { lhs.val, rhs.val }, opVal };
   addInstruction(binaryInstr);
 
@@ -590,7 +608,7 @@ TACBuilder::buildUnary(const UnaryExpr& unary)
   else if (unary.op == ExprOp::UnaryDec)
     op = OpCode::Dec;
 
-  ValueID opVal = _ssa->makeValueID();
+  ValueID opVal = _ssa.makeValueID();
   Instruction unaryInstr = { op, { expr.val }, opVal };
   addInstruction(unaryInstr);
 
@@ -620,7 +638,7 @@ TACBuilder::buildNumber(const NumVal& val)
 InstructionResult
 TACBuilder::buildString(const StringVal& val)
 {
-  TACValue tacVal = { _ssa->internalize(val.val),
+  TACValue tacVal = { _ssa.internalize(val.val),
                       ValueType::Literal,
                       ValueSource::Literal };
 
@@ -659,8 +677,9 @@ TACBuilder::buildName(const NameExpr& name, MemberAccessContext ctx)
   TACValue operand;
 
   // if accessing local name, try to resolve into SSA identity
+  // TODO: change this
   if (!ctx.enabled && isValid(name.varInfo.id)) {
-    auto idState = _ssa->getIdentityState(name.varInfo.id);
+    auto idState = _ssa.getIdentityState(name.varInfo.id);
     operand = { idState, ValueType::SSAIdentity, ValueSource::Computed };
     if (ctx.ssaImmediate)
       return { {}, operand };
@@ -668,7 +687,7 @@ TACBuilder::buildName(const NameExpr& name, MemberAccessContext ctx)
   } else if (isValid(name.varInfo.id))
     operand = { name.varInfo.id, ValueType::Place, ValueSource::Static };
   else
-    operand = { _ssa->internalize(name.name),
+    operand = { _ssa.internalize(name.name),
                 ValueType::Place,
                 ValueSource::Dynamic };
 
@@ -678,7 +697,7 @@ TACBuilder::buildName(const NameExpr& name, MemberAccessContext ctx)
 InstructionResult
 TACBuilder::buildSelf(const SelfExpr& self, MemberAccessContext ctx)
 {
-  auto idState = _ssa->getIdentityState(SSAIdentityID{ 0 });
+  auto idState = _ssa.getIdentityState(SSAIdentityID{ 0 });
   TACValue ssaVal = { idState, ValueType::SSAIdentity, ValueSource::Computed };
   if (ctx.place)
     return { {}, ssaVal };
@@ -701,8 +720,8 @@ TACBuilder::injectParameter(VarID id, const char* name, TACValue val)
 {
   auto res = addAccessInstruction(val, {});
 
-  auto idState = _ssa->getIdentityState(id, name);
-  _ssa->assign(idState.id, res.val);
+  auto idState = _ssa.getIdentityState(id, name);
+  _ssa.assign(idState.id, res.val);
 
   TACValue ssaVal = { idState, ValueType::SSAIdentity, ValueSource::Computed };
 
@@ -725,6 +744,8 @@ TACBuilder::resolveSSA()
     ++idx;
     auto ctxIt = _ssaBlocksMap.find(current->id.val);
     auto& ctx = ctxIt->second;
+    // outVersions guard needed for ensuring that each block, if visited first
+    // time, will propagate
     if (ctx.inVersions.empty() && ctx.outVersions.empty())
       continue;
 
@@ -788,22 +809,26 @@ TACBuilder::resolveIdentities()
     auto ctxIt = _ssaBlocksMap.try_emplace(current->id.val);
     auto& ctx = ctxIt.first->second;
 
+    bool hasExit = false;
     for (auto& instr : current->instructions) {
-      if (instr.op == OpCode::Store &&
-          instr.operands.at(1).type == ValueType::SSAIdentity) {
-        auto operand = std::get<SSAIdentityState>(instr.operands.at(1).id);
+      if (instr->op == OpCode::Store &&
+          instr->operands.at(1).type == ValueType::SSAIdentity) {
+        auto operand = std::get<SSAIdentityState>(instr->operands.at(1).id);
         auto versionsIt = ctx.outVersions.try_emplace(operand.id);
         versionsIt.first->second = operand.ver;
 
         ctx.usedDefinitions.emplace(operand.id);
-      } else if (instr.op == OpCode::Jmp) {
-        auto blockID = std::get<BlockID>(instr.operands.at(0).id);
+      } else if (instr->op == OpCode::Jmp) {
+        auto blockID = std::get<BlockID>(instr->operands.at(0).id);
         Block* b = _blocks.at(blockID.val);
         ctx.outBlocks.push_back(b);
         worklist.push_back(b);
-      } else if (instr.op == OpCode::CondJmp) {
-        auto ifBlockID = std::get<BlockID>(instr.operands.at(1).id);
-        auto elseBlockID = std::get<BlockID>(instr.operands.at(2).id);
+
+        hasExit = true;
+        break;
+      } else if (instr->op == OpCode::CondJmp) {
+        auto ifBlockID = std::get<BlockID>(instr->operands.at(1).id);
+        auto elseBlockID = std::get<BlockID>(instr->operands.at(2).id);
         Block* ifBlock = _blocks.at(ifBlockID.val);
         Block* elseBlock = _blocks.at(elseBlockID.val);
         ctx.outBlocks.push_back(ifBlock);
@@ -811,21 +836,33 @@ TACBuilder::resolveIdentities()
 
         worklist.push_back(ifBlock);
         worklist.push_back(elseBlock);
-      } else if (instr.op == OpCode::Load &&
-                 instr.operands.at(0).type == ValueType::SSAIdentity) {
-        auto operand = std::get<SSAIdentityState>(instr.operands.at(0).id);
+
+        hasExit = true;
+        break;
+      } else if (instr->op == OpCode::Load &&
+                 instr->operands.at(0).type == ValueType::SSAIdentity) {
+        auto operand = std::get<SSAIdentityState>(instr->operands.at(0).id);
         auto it = ctx.outVersions.find(operand.id);
         // if this load instruction comes after existing definition in block,
         // ignore it
         if (it == ctx.outVersions.end()) {
           auto outer = ctx.usedIdentities.try_emplace(operand.id);
-          outer.first->second.push_back(&instr);
+          outer.first->second.push_back(instr);
         }
       }
       // ignore block's remaining instructions if encountered return
-      else if (instr.op == OpCode::Ret) {
+      else if (instr->op == OpCode::Ret) {
+        hasExit = true;
         break;
       }
+    }
+
+    if (!hasExit) {
+      Instruction exit = { OpCode::Exit, {}, {}, current };
+      current->instructions.push_back(allocInstruction(exit));
+    } else {
+      for (auto& pair : ctx.outVersions)
+        ctx.propagatedIdentities.emplace(pair.first);
     }
   }
 }
@@ -833,16 +870,8 @@ TACBuilder::resolveIdentities()
 void
 TACBuilder::propagateVersions(BlockContext& ctx, std::vector<Block*>& worklist)
 {
-  // propagate incoming versions into successors
-  for (auto& pair : ctx.inVersions) {
-    SSAIdentityID id = pair.first;
-    if (ctx.usedDefinitions.find(id) == ctx.usedDefinitions.end() &&
-        ctx.outVersions.find(id) == ctx.outVersions.end())
-      ctx.outVersions.try_emplace(id, pair.second.back());
-  }
-
   ctx.inVersions.clear();
-  if (ctx.outVersions.empty())
+  if (ctx.propagatedIdentities.empty())
     return;
 
   for (auto& b : ctx.outBlocks) {
@@ -850,13 +879,14 @@ TACBuilder::propagateVersions(BlockContext& ctx, std::vector<Block*>& worklist)
     auto outCtxIt = _ssaBlocksMap.try_emplace(b->id.val);
     auto& outCtx = outCtxIt.first->second;
 
-    for (auto& out : ctx.outVersions) {
-      auto inVersionsIt = outCtx.inVersions.try_emplace(out.first);
-      inVersionsIt.first->second.push_back(out.second);
+    for (auto& out : ctx.propagatedIdentities) {
+      auto outVer = ctx.outVersions.find(out)->second;
+      auto inVersionsIt = outCtx.inVersions.try_emplace(out);
+      inVersionsIt.first->second.push_back(outVer);
     }
   }
 
-  ctx.outVersions.clear();
+  ctx.propagatedIdentities.clear();
 }
 
 void
@@ -881,29 +911,49 @@ TACBuilder::ensurePhi(BlockContext& ctx,
                      : incomingUnfolded;
 
     // check if vectors versions are compatible
-    for (auto& v : smaller) {
-      if (bigger.find(v) == bigger.end()) {
-        needsPhi = true;
-        break;
+    if (versions.size() == 2 && versions.at(0) != versions.at(1) &&
+        incomingUnfolded.size() > currentUnfolded.size()) {
+      needsPhi = true;
+    } else {
+      for (auto& v : smaller) {
+        if (bigger.find(v) == bigger.end()) {
+          needsPhi = true;
+          break;
+        }
       }
     }
 
     if (!needsPhi) {
       // update version if it gives more info and is compatible
-      if (versions.size() == 1 &&
-          incomingUnfolded.size() > currentUnfolded.size())
+      if ((versions.size() == 1 || versions.at(0) == versions.at(1)) &&
+          incomingUnfolded.size() > currentUnfolded.size()) {
         ctxVerIt->second = versions.back();
+        ctx.propagatedIdentities.emplace(id);
+
+        if (ctx.usedDefinitions.find(id) == ctx.usedDefinitions.end()) {
+          auto versionsIt = ctx.outVersions.try_emplace(id);
+          versionsIt.first->second = versions.back();
+        }
+      }
 
       return;
     }
 
-    versions.insert(versions.begin(), currentVer);
+    if (currentVer == 0)
+      versions.insert(versions.begin(), currentVer);
   }
   // dont make phi if symbol is unused and only one version incoming
   // also dont make if both incoming versions are the same
   // TODO: fix this
   else if (versions.size() == 1 || versions.at(0) == versions.at(1)) {
-    ctx.usedVersions.try_emplace(id, versions.back());
+    ctx.usedVersions.emplace(id, versions.back());
+    ctx.propagatedIdentities.emplace(id);
+
+    if (ctx.usedDefinitions.find(id) == ctx.usedDefinitions.end()) {
+      auto versionsIt = ctx.outVersions.try_emplace(id);
+      versionsIt.first->second = versions.back();
+    }
+
     return;
   }
 
@@ -916,41 +966,46 @@ TACBuilder::makePhi(BlockContext& ctx,
                     SSAIdentityID id,
                     const std::vector<SSAVersion>& versions)
 {
+  if (versions.size() != 2)
+    return;
+
   auto phiIt = ctx.phiFunctions.find(id);
   if (phiIt != ctx.phiFunctions.end()) {
     auto& choices = phiIt->second->choices;
-    choices.insert(choices.end(), versions.begin(), versions.end());
-    ctx.outVersions.try_emplace(id, phiIt->second->ver);
+    choices = versions;
+    ctx.propagatedIdentities.emplace(id);
     return;
   }
 
   PhiFunction phi = {};
   phi.id = id;
-  phi.ver = _ssa->assign(id,
-                         TACValue{ _ssa->makeValueID(),
-                                   ValueType::SSAValue,
-                                   ValueSource::Computed });
+  phi.ver = _ssa.assign(
+    id,
+    TACValue{ _ssa.makeValueID(), ValueType::SSAValue, ValueSource::Computed });
   phi.choices = versions;
-  phi.res = _ssa->makeValueID();
+  phi.res = _ssa.makeValueID();
 
   auto outerIt = _phiFunctions.try_emplace(id);
   auto newPhiIt = outerIt.first->second.try_emplace(phi.ver, phi);
   auto& newPhi = newPhiIt.first->second;
   ctx.phiFunctions.try_emplace(id, &newPhi);
   ctx.usedVersions.insert_or_assign(id, newPhi.ver);
+  ctx.propagatedIdentities.emplace(id);
 
   // if there is no definition of given identity later, then add it to outcoming
   // versions
   if (ctx.usedDefinitions.find(id) == ctx.usedDefinitions.end() &&
-      newPhi.choices.size() > 1)
-    ctx.outVersions.try_emplace(id, newPhi.ver);
+      newPhi.choices.size() > 1) {
+    auto versionsIt = ctx.outVersions.try_emplace(id);
+    versionsIt.first->second = newPhi.ver;
+  }
 }
 
-std::set<SSAVersion>
+std::unordered_set<SSAVersion>
 TACBuilder::unfoldVersions(SSAIdentityID id,
                            const std::vector<SSAVersion>& versions)
 {
-  std::set<SSAVersion> unfolded;
+  std::unordered_set<SSAVersion> unfolded;
   std::vector<SSAVersion> worklist = versions;
   auto outerIt = _phiFunctions.try_emplace(id);
   auto& phiVersions = outerIt.first->second;
@@ -975,145 +1030,25 @@ void
 TACBuilder::insertPhi(Block* b, PhiFunction& phi)
 {
   std::vector<TACValue> operands;
-  for (auto& ver : phi.choices)
+  for (auto& ver : phi.choices) {
+    operands.push_back({ BlockID{}, ValueType::Block, ValueSource::Static });
     operands.push_back({ SSAIdentityState{ phi.id, ver },
                          ValueType::SSAIdentity,
                          ValueSource::Computed });
+  }
 
   TACValue newVal = { SSAIdentityState{ phi.id, phi.ver },
                       ValueType::SSAIdentity,
                       ValueSource::Computed };
 
-  Instruction phiInstr = { OpCode::Phi, operands, phi.res };
-  Instruction store = { OpCode::Store, { TACValue{ phi.res }, newVal } };
+  Instruction phiInstrTemp = { OpCode::Phi, operands, phi.res, b };
+  Instruction storeTemp = {
+    OpCode::Store, { TACValue{ phi.res }, newVal }, {}, b
+  };
+
+  Instruction* phiInstr = allocInstruction(phiInstrTemp);
+  Instruction* store = allocInstruction(storeTemp);
 
   b->instructions.insert(b->instructions.begin(), store);
   b->instructions.insert(b->instructions.begin(), phiInstr);
-}
-
-void
-TACBuilder::printInstruction(Instruction& instr)
-{
-  std::string str =
-    isValid(instr.res) ? "@" + std::to_string(instr.res.val) + " = " : "";
-  str += getOpCodeStr(instr.op);
-  if (!instr.operands.empty()) {
-    str += " " + tacValueToStr(instr.operands.front());
-
-    for (size_t i = 1; i < instr.operands.size(); ++i)
-      str += ", " + tacValueToStr(instr.operands[i]);
-  }
-
-  printf("%s\n", str.c_str());
-}
-
-const char*
-TACBuilder::getOpCodeStr(OpCode op)
-{
-  switch (op) {
-    case OpCode::Move:
-      return "move";
-    case OpCode::Load:
-      return "load";
-    case OpCode::DynRead:
-      return "dynread";
-    case OpCode::Store:
-      return "store";
-    case OpCode::Jmp:
-      return "jmp";
-    case OpCode::Call:
-      return "call";
-    case OpCode::Param:
-      return "param";
-    case OpCode::CondJmp:
-      return "condjmp";
-    case OpCode::Add:
-      return "add";
-    case OpCode::Sub:
-      return "sub";
-    case OpCode::Mul:
-      return "mul";
-    case OpCode::Div:
-      return "div";
-    case OpCode::Mod:
-      return "mod";
-    case OpCode::Shiftl:
-      return "shiftl";
-    case OpCode::Shiftr:
-      return "shiftr";
-    case OpCode::And:
-      return "and";
-    case OpCode::Or:
-      return "or";
-    case OpCode::Xor:
-      return "xor";
-    case OpCode::Lt:
-      return "lt";
-    case OpCode::Gt:
-      return "gt";
-    case OpCode::Leq:
-      return "leq";
-    case OpCode::Geq:
-      return "geq";
-    case OpCode::Eq:
-      return "eq";
-    case OpCode::Neq:
-      return "neq";
-    case OpCode::LogicAnd:
-      return "logicand";
-    case OpCode::LogicOr:
-      return "logicor";
-    case OpCode::LogicNeg:
-      return "lneg";
-    case OpCode::ArithmNeg:
-      return "aneg";
-    case OpCode::Inc:
-      return "inc";
-    case OpCode::Dec:
-      return "dec";
-    case OpCode::Get:
-      return "get";
-    case OpCode::GetRef:
-      return "getref";
-    case OpCode::Ret:
-      return "ret";
-    case OpCode::Phi:
-      return "phi";
-    default:
-      return "unknown";
-  }
-}
-
-std::string
-TACBuilder::tacValueToStr(TACValue val)
-{
-  if (val.type == ValueType::Self)
-    return "self";
-
-  std::string str = "";
-  if (val.src == ValueSource::Dynamic)
-    str += "dyn ";
-  else if (val.src == ValueSource::Parameter)
-    str += "param ";
-
-  if (auto boolVal = std::get_if<bool>(&val.id)) {
-    str += boolVal ? "true" : "false";
-  } else if (auto numVal = std::get_if<double>(&val.id)) {
-    str += std::to_string(*numVal);
-  } else if (auto literalID = std::get_if<LiteralID>(&val.id)) {
-    str += "ltrl" + std::to_string(literalID->val);
-  } else if (auto valID = std::get_if<ValueID>(&val.id)) {
-    str += "@" + std::to_string(valID->val);
-  } else if (auto ssaId = std::get_if<SSAIdentityState>(&val.id)) {
-    str += _ssa->getIdentityStr(ssaId->id) + std::to_string(ssaId->id.val) +
-           "_" + std::to_string(ssaId->ver);
-  } else if (auto varID = std::get_if<SSAIdentityID>(&val.id)) {
-    str += "var" + std::to_string(varID->val);
-  } else if (auto fnID = std::get_if<FunctionID>(&val.id)) {
-    str += "fn" + std::to_string(fnID->val);
-  } else if (auto blockID = std::get_if<BlockID>(&val.id)) {
-    str += "blk" + std::to_string(blockID->val);
-  }
-
-  return str;
 }
