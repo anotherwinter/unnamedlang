@@ -9,6 +9,7 @@ using namespace HIR;
 
 TypedAST::TypedAST(Diagnostics& diag, SymbolRegistry& reg)
   : _diag(diag)
+  , _reg(reg)
 {
   _alloc = std::make_unique<NodeAllocator>(_diag);
   _builder = std::make_unique<TypedASTBuilder>(_diag, reg, *_alloc);
@@ -95,10 +96,11 @@ TypedAST::print(const TypedNode* node, int indent)
           printf("value:\n");
           print(varDecl.val, nextIndent + 2);
 
+          auto type = _analyzer->inferType(varDecl.val);
           printIndent(nextIndent);
           printf("type:\n");
           printIndent(nextIndent + 2);
-          printf("%u\n", _analyzer->inferType(varDecl.val).val);
+          printf("%s\n", _reg.getTypeName(type).data());
         }
       },
       [&](const VarAssign& varAssign) {
@@ -109,19 +111,21 @@ TypedAST::print(const TypedNode* node, int indent)
         printf("lhs:\n");
         print(varAssign.lhs, nextIndent + 2);
 
+        auto type = _analyzer->inferType(varAssign.lhs);
         printIndent(nextIndent);
         printf("type:\n");
         printIndent(nextIndent + 2);
-        printf("%u\n", _analyzer->inferType(varAssign.lhs).val);
+        printf("%s\n", _reg.getTypeName(type).data());
 
         printIndent(nextIndent);
         printf("rhs:\n");
         print(varAssign.rhs, nextIndent + 2);
 
+        type = _analyzer->inferType(varAssign.rhs);
         printIndent(nextIndent);
         printf("type:\n");
         printIndent(nextIndent + 2);
-        printf("%u\n", _analyzer->inferType(varAssign.rhs).val);
+        printf("%s\n", _reg.getTypeName(type).data());
       },
       [&](const LoopWhl& loopWhl) {
         printIndent(nextIndent);
@@ -158,7 +162,7 @@ TypedAST::print(const TypedNode* node, int indent)
         printf("body:\n");
         print(stmtIf.body, nextIndent + 2);
 
-        if (!std::holds_alternative<std::monostate>(stmtIf.elseBody->node)) {
+        if (stmtIf.elseBody) {
           printIndent(nextIndent);
           printf("else body:\n");
           print(stmtIf.elseBody, nextIndent + 2);
@@ -207,19 +211,21 @@ TypedAST::print(const TypedNode* node, int indent)
         printf("lhs:\n");
         print(binaryExpr.lhs, nextIndent + 2);
 
+        auto type = _analyzer->inferType(binaryExpr.lhs);
         printIndent(nextIndent);
         printf("type:\n");
         printIndent(nextIndent + 2);
-        printf("%u\n", _analyzer->inferType(binaryExpr.lhs).val);
+        printf("%s\n", _reg.getTypeName(type).data());
 
         printIndent(nextIndent);
         printf("rhs:\n");
         print(binaryExpr.rhs, nextIndent + 2);
 
+        type = _analyzer->inferType(binaryExpr.rhs);
         printIndent(nextIndent);
         printf("type:\n");
         printIndent(nextIndent + 2);
-        printf("%u\n", _analyzer->inferType(binaryExpr.rhs).val);
+        printf("%s\n", _reg.getTypeName(type).data());
       },
       [&](const UnaryExpr& unaryExpr) {
         std::string precStr = "(";
@@ -237,10 +243,11 @@ TypedAST::print(const TypedNode* node, int indent)
         printf("expr:\n");
         print(unaryExpr.expr, nextIndent + 2);
 
+        auto type = _analyzer->inferType(unaryExpr.expr);
         printIndent(nextIndent);
         printf("type:\n");
         printIndent(nextIndent + 2);
-        printf("%u\n", _analyzer->inferType(unaryExpr.expr).val);
+        printf("%s\n", _reg.getTypeName(type).data());
       },
       [&](const MemberAccess& membAccess) {
         printIndent(nextIndent);

@@ -174,7 +174,7 @@ SymbolRegistry::beginDeclareClass(const std::string& name,
 {
   auto id = _typeID;
   _nameToTypeID.emplace(name, id);
-  _classes.emplace(id, ClassInfo{ id, isPrimitive, isValueImmutable });
+  _classes.emplace(id, ClassInfo{ name, id, isPrimitive, isValueImmutable });
   ++_typeID;
 
   return id;
@@ -319,6 +319,16 @@ TypeID
 SymbolRegistry::getCurScopeOwnerID()
 {
   return _scopes.back()->getOwnerID();
+}
+
+std::string_view
+SymbolRegistry::getTypeName(TypeID id)
+{
+  auto it = _classes.find(id);
+  if (it == _classes.end())
+    return {};
+
+  return it->second.name;
 }
 
 void

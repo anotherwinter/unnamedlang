@@ -20,6 +20,7 @@ X(LOGIC_AND)
 X(LOGIC_OR)
 
 X(BANG)
+X(DUMMY1) // TODO: change this (right now it fixes inconsistency between optype and tokentype)
 X(UNARY_INC)
 X(UNARY_DEC)
 

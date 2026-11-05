@@ -45,9 +45,9 @@ tokType2OpType(TokenType tokType, bool unary)
 
   switch (tokType) {
     case TokenType::MINUS:
-      return unary ? OP_UNARY_ARITHM_NEG : OP_BINARY_SUB;
+      return unary ? UnaryArithmNeg : Sub;
     case TokenType::DOT:
-      return OP_BINARY_MEMB_ACCESS;
+      return MembAccess;
     default:
       return static_cast<OpType>(tokType);
   }

@@ -240,7 +240,7 @@ TypedASTBuilder::buildVarAssign(const ASTNode* node)
   TypedNode* n = _alloc.allocTypedNode<VarAssign>(node);
   auto& assign = std::get<VarAssign>(n->node);
 
-  assign.op = static_cast<ExprOp>(node->data.varAssign.op);
+  assign.op = static_cast<OpType>(node->data.varAssign.op);
   assign.lhs = buildFromAST(node->data.varAssign.lhs);
   assign.rhs = buildFromAST(node->data.varAssign.rhs);
 
@@ -334,7 +334,7 @@ TypedASTBuilder::buildBinaryExpr(const ASTNode* node)
   auto& binaryExpr = std::get<BinaryExpr>(n->node);
 
   auto nodeBinary = node->data.binaryOp;
-  binaryExpr.op = static_cast<ExprOp>(nodeBinary.op);
+  binaryExpr.op = static_cast<OpType>(nodeBinary.op);
   binaryExpr.lhs = buildFromAST(nodeBinary.lhs);
   binaryExpr.rhs = buildFromAST(nodeBinary.rhs);
 
@@ -349,7 +349,7 @@ TypedASTBuilder::buildUnaryExpr(const ASTNode* node, UnaryExprPrec prec)
 
   auto nodeUnary = node->data.unaryOp;
 
-  unaryExpr.op = static_cast<ExprOp>(nodeUnary.op);
+  unaryExpr.op = static_cast<OpType>(nodeUnary.op);
   unaryExpr.prec = prec;
   unaryExpr.expr = buildFromAST(nodeUnary.expr);
 

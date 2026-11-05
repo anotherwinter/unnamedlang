@@ -272,6 +272,8 @@ struct FnDeclKey
 
 struct ClassInfo
 {
+  const std::string
+    name; // TODO: change this to string_view and add string storage
   const TypeID classID = {};
   bool isPrimitive = false;
   bool isValueImmutable = false;
@@ -391,6 +393,8 @@ public:
   bool isGlobalScope();
 
   TypeID getCurScopeOwnerID();
+
+  std::string_view getTypeName(TypeID id);
 
 private:
   SymbolRegistry(const SymbolRegistry& other) = delete;

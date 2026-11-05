@@ -11,7 +11,7 @@ main(int argc, char* argv[])
   bool analyze = argc > 1 && std::strcmp(argv[1], "-a") == 0;
 
   // read from file if filename specified
-  if (argc > 2) {
+  if (argc > 1) {
     std::ifstream file;
     if (analyze)
       file = std::ifstream{ argv[2] };

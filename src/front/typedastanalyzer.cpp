@@ -190,9 +190,9 @@ TypedASTAnalyzer::analyzeVarAssign(TypedNode* node)
   TypeID rhsType = inferType(varAssign.rhs);
 
   // if assignment with binary operation
-  if (varAssign.op > ExprOp::Assign) {
+  if (varAssign.op > OpType::Assign) {
     auto op = static_cast<OperatorID>(to_underlying(varAssign.op) -
-                                      to_underlying(ExprOp::AssignAdd));
+                                      to_underlying(OpType::AssignAdd));
     auto opRes =
       _reg.resolveFunction(FnNameID{ to_underlying(op) }, { rhsType }, lhsType);
     if (!isValid(opRes.id)) {
@@ -267,7 +267,7 @@ TypedASTAnalyzer::analyzeBinaryExpr(TypedNode* node)
   auto rhsType = inferType(binary.rhs);
 
   // if unexpected op
-  if (binary.op >= ExprOp::Assign)
+  if (binary.op >= OpType::Assign)
     _diag.putMsg(STUB_ERR, node->line, node->col);
 
   // try to resolve operator statically only if both operands can be resolved
@@ -299,7 +299,7 @@ TypedASTAnalyzer::analyzeUnaryExpr(TypedNode* node)
   auto exprType = inferType(unary.expr);
 
   // if unexpected op
-  if (unary.op < ExprOp::UnaryNeg || unary.op > ExprOp::UnaryDec)
+  if (unary.op < OpType::UnaryNeg || unary.op > OpType::UnaryDec)
     _diag.putMsg(STUB_ERR, node->line, node->col);
 
   // try to resolve operator statically

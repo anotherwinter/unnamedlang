@@ -12,9 +12,10 @@ TAC::TAC(Diagnostics& diag, SymbolRegistry& symReg)
 {
   _layReg = std::make_unique<LayoutRegistry>();
   _ssa = std::make_unique<SSAState>();
+  _blockAlloc = std::make_unique<BlockAllocator>(diag);
   _builder =
-    std::make_unique<TACBuilder>(diag, symReg, *_layReg.get(), *_ssa.get());
-  _optimizer = std::make_unique<TACOptimizer>();
+    std::make_unique<TACBuilder>(diag, symReg, *_layReg, *_ssa, *_blockAlloc);
+  _optimizer = std::make_unique<TACOptimizer>(*_blockAlloc);
 }
 
 TAC::~TAC() {}
@@ -34,13 +35,51 @@ TAC::optimize(TACBlocks<Unoptimized> blocks)
   return _optimizer->optimize(blocks);
 }
 
+TACBlocks<Optimized>
+TAC::dryOptimize(TACBlocks<Unoptimized> blocks)
+{
+  return _optimizer->dryOptimize(blocks);
+}
+
 void
 TAC::print(std::vector<Block*>& blocks)
 {
   for (auto& b : blocks) {
     printf("\nblock %u:\n", b->id.val);
-    for (auto& i : b->instructions)
-      printInstruction(*i);
+    for (auto& instr : b->instructions)
+      printInstruction(*instr);
+  }
+}
+
+void
+TAC::print(Block* begin)
+{
+  std::unordered_set<BlockID::__BlockID> visited;
+  std::vector<Block*> worklist;
+  worklist.push_back(begin);
+  size_t idx = 0;
+  while (idx != worklist.size()) {
+    Block* b = worklist.at(idx);
+    ++idx;
+
+    if (visited.find(b->id.val) != visited.end())
+      continue;
+
+    visited.emplace(b->id.val);
+
+    printf("\nblock %u:\n", b->id.val);
+    for (auto& instr : b->instructions) {
+      printInstruction(*instr);
+      if (instr->op == OpCode::Jmp) {
+        auto& nextBlockID = std::get<BlockID>(instr->operands.at(0).id);
+        worklist.push_back(_blockAlloc->at(nextBlockID.val));
+      } else if (instr->op == OpCode::CondJmp) {
+        for (size_t i = 1; i < instr->operands.size(); ++i) {
+          auto& nextBlockID = std::get<BlockID>(instr->operands.at(i).id);
+          worklist.push_back(_blockAlloc->at(nextBlockID.val));
+        }
+      }
+    }
   }
 }
 

@@ -1,6 +1,4 @@
 #pragma once
-#include "alloc/arena.h"
-#include "front/symbolregistry.h"
 #include "front/typedast.h"
 #include <unordered_map>
 #include <unordered_set>
@@ -368,6 +366,7 @@ struct TACBlocks
 
 class LayoutRegistry;
 class SSAState;
+class BlockAllocator;
 class TACBuilder;
 class TACOptimizer;
 
@@ -382,7 +381,11 @@ public:
   // TODO: add null checks for blocks
   TACBlocks<Optimized> optimize(TACBlocks<Unoptimized> blocks);
 
+  TACBlocks<Optimized> dryOptimize(TACBlocks<Unoptimized> blocks);
+
   void print(std::vector<Block*>& blocks);
+
+  void print(Block* begin);
 
 private:
   TAC(const TAC& other) = delete;
@@ -390,10 +393,10 @@ private:
 
   Diagnostics& _diag;
   SymbolRegistry& _symReg;
-  ArenaAlloc _arena;
 
   std::unique_ptr<LayoutRegistry> _layReg;
   std::unique_ptr<SSAState> _ssa;
+  std::unique_ptr<BlockAllocator> _blockAlloc;
 
   std::unique_ptr<TACBuilder> _builder;
   std::unique_ptr<TACOptimizer> _optimizer;

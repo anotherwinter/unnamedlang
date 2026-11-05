@@ -1,7 +1,4 @@
 #include "middle/tacbuilder.h"
-#include "diagnostics.h"
-#include "front/symbolregistry.h"
-#include "middle/layoutregistry.h"
 #include "middle/ssastate.h"
 #include "middle/tac.h"
 #include <cstdio>
@@ -17,43 +14,37 @@ using namespace HIR;
 TACBuilder::TACBuilder(Diagnostics& diag,
                        SymbolRegistry& symReg,
                        LayoutRegistry& layReg,
-                       SSAState& ssa)
+                       SSAState& ssa,
+                       BlockAllocator& blockAlloc)
   : _diag(diag)
   , _symReg(symReg)
   , _arena()
   , _layReg(layReg)
   , _ssa(ssa)
-
+  , _blockAlloc(blockAlloc)
 {
 }
 
-TACBuilder::~TACBuilder()
-{
-  for (auto& b : _blocks)
-    b->~Block();
-}
+TACBuilder::~TACBuilder() {}
 
 TACBlocks<Unoptimized>
 TACBuilder::build(HIR::TypedTree<HIR::Analyzed> root)
 {
   _branches.clear();
-  for (auto& b : _blocks)
-    b->~Block();
-
-  _blocks.clear();
   _ssaBlocksMap.clear();
   _phiFunctions.clear();
 
+  _blockAlloc.reset();
   _arena.reset();
 
   // TODO: fix memleaks related to begin
-  Block* begin = allocBlock();
+  Block* begin = _blockAlloc.alloc();
   pushBranchCtx(begin);
   buildFromAST(root.root);
   resolveSSA();
   popBranchCtx();
 
-  return { begin, &_blocks };
+  return { begin, &_blockAlloc.getBlocks() };
 }
 
 void
@@ -94,38 +85,6 @@ TACBuilder::addAccessInstruction(TACValue expr, MemberAccessContext ctx)
   return { id, TACValue{ id, type, ValueSource::Computed } };
 }
 
-Block*
-TACBuilder::allocBlock()
-{
-  void* raw = _arena.alloc(sizeof(Block), alignof(Block));
-  if (!raw) {
-    _diag.putMsg(STUB_ERR, 0, 0);
-    return nullptr;
-  }
-
-  Block* b = new (raw) Block();
-  _blocks.push_back(b);
-  b->id = _blockID;
-  ++_blockID;
-
-  return b;
-}
-
-Instruction*
-TACBuilder::allocInstruction(Instruction i)
-{
-  void* raw = _arena.alloc(sizeof(Instruction), alignof(Instruction));
-  if (!raw) {
-    _diag.putMsg(STUB_ERR, 0, 0);
-    return nullptr;
-  }
-
-  Instruction* instr = new (raw) Instruction();
-  *instr = i;
-
-  return instr;
-}
-
 void
 TACBuilder::buildFromAST(const TypedNode* node)
 {
@@ -149,8 +108,8 @@ TACBuilder::buildFromAST(const TypedNode* node)
                [&](const UnaryExpr& unaryExpr) {
                  // unary expression as statement allowed only if its increment
                  // or decrement
-                 if (unaryExpr.op == ExprOp::UnaryInc ||
-                     unaryExpr.op == ExprOp::UnaryDec)
+                 if (unaryExpr.op == OpType::UnaryInc ||
+                     unaryExpr.op == OpType::UnaryDec)
                    buildUnary(unaryExpr);
                },
                [&](const MemberAccess& membAccess) { return; },
@@ -177,7 +136,7 @@ TACBuilder::buildNodeList(const NodeList& list)
 InstructionResult
 TACBuilder::buildFnDef(const FnDef& fnDef)
 {
-  Block* b = allocBlock();
+  Block* b = _blockAlloc.alloc();
   pushBranchCtx(b);
 
   // inject hidden params if building for method
@@ -238,37 +197,37 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
 
   TACValue rhsOperand = rhs.val;
 
-  if (varAssign.op > ExprOp::Assign) {
+  if (varAssign.op > OpType::Assign) {
     OpCode op;
     switch (varAssign.op) {
-      case ExprOp::AssignAdd:
+      case OpType::AssignAdd:
         op = OpCode::Add;
         break;
-      case ExprOp::AssignSub:
+      case OpType::AssignSub:
         op = OpCode::Sub;
         break;
-      case ExprOp::AssignMul:
+      case OpType::AssignMul:
         op = OpCode::Mul;
         break;
-      case ExprOp::AssignDiv:
+      case OpType::AssignDiv:
         op = OpCode::Div;
         break;
-      case ExprOp::AssignMod:
+      case OpType::AssignMod:
         op = OpCode::Mod;
         break;
-      case ExprOp::AssignShiftl:
+      case OpType::AssignShiftl:
         op = OpCode::Shiftl;
         break;
-      case ExprOp::AssignShiftr:
+      case OpType::AssignShiftr:
         op = OpCode::Shiftr;
         break;
-      case ExprOp::AssignAnd:
+      case OpType::AssignAnd:
         op = OpCode::And;
         break;
-      case ExprOp::AssignOr:
+      case OpType::AssignOr:
         op = OpCode::Or;
         break;
-      case ExprOp::AssignXor:
+      case OpType::AssignXor:
         op = OpCode::Xor;
         break;
       default:
@@ -300,9 +259,9 @@ TACBuilder::buildVarAssign(const VarAssign& varAssign)
 InstructionResult
 TACBuilder::buildLoopWhl(const LoopWhl& loopWhl)
 {
-  Block* cond = allocBlock();
-  Block* body = allocBlock();
-  Block* next = allocBlock();
+  Block* cond = _blockAlloc.alloc();
+  Block* body = _blockAlloc.alloc();
+  Block* next = _blockAlloc.alloc();
   Instruction jmp = { OpCode::Jmp,
                       { { cond->id, ValueType::Block, ValueSource::Static } } };
   addInstruction(jmp);
@@ -332,9 +291,9 @@ TACBuilder::buildLoopFor(const LoopFor& loopFor)
 {
   buildFromAST(loopFor.assigns);
 
-  Block* cond = allocBlock();
-  Block* body = allocBlock();
-  Block* next = allocBlock();
+  Block* cond = _blockAlloc.alloc();
+  Block* body = _blockAlloc.alloc();
+  Block* next = _blockAlloc.alloc();
   Instruction jmp = { OpCode::Jmp,
                       { { cond->id, ValueType::Block, ValueSource::Static } } };
   addInstruction(jmp);
@@ -363,9 +322,9 @@ TACBuilder::buildLoopFor(const LoopFor& loopFor)
 InstructionResult
 TACBuilder::buildIf(const StmtIf& stmtIf)
 {
-  Block* cond = allocBlock();
-  Block* body = allocBlock();
-  Block* next = allocBlock();
+  Block* cond = _blockAlloc.alloc();
+  Block* body = _blockAlloc.alloc();
+  Block* next = _blockAlloc.alloc();
   Instruction jmp = { OpCode::Jmp,
                       { { cond->id, ValueType::Block, ValueSource::Static } } };
   addInstruction(jmp);
@@ -375,7 +334,7 @@ TACBuilder::buildIf(const StmtIf& stmtIf)
   TACValue bodyVal = { body->id, ValueType::Block, ValueSource::Static };
   TACValue elseVal = { elseBody->id, ValueType::Block, ValueSource::Static };
   if (stmtIf.elseBody) {
-    elseBody = allocBlock();
+    elseBody = _blockAlloc.alloc();
 
     // swap next and else so it looks more consistent
     Block* temp = next;
@@ -441,7 +400,7 @@ TACBuilder::buildBrk(const StmtBrk& stmtBrk)
 
   // if has condition
   if (stmtBrk.cond) {
-    Block* next = allocBlock();
+    Block* next = _blockAlloc.alloc();
     TACValue nextVal = { next->id, ValueType::Block, ValueSource::Static };
 
     auto cond = buildPlace(stmtBrk.cond);
@@ -524,58 +483,58 @@ TACBuilder::buildBinary(const BinaryExpr& binary)
 
   OpCode op;
   switch (binary.op) {
-    case ExprOp::Add:
+    case OpType::Add:
       op = OpCode::Add;
       break;
-    case ExprOp::Sub:
+    case OpType::Sub:
       op = OpCode::Sub;
       break;
-    case ExprOp::Mul:
+    case OpType::Mul:
       op = OpCode::Mul;
       break;
-    case ExprOp::Div:
+    case OpType::Div:
       op = OpCode::Div;
       break;
-    case ExprOp::Mod:
+    case OpType::Mod:
       op = OpCode::Mod;
       break;
-    case ExprOp::Shiftl:
+    case OpType::Shiftl:
       op = OpCode::Shiftl;
       break;
-    case ExprOp::Shiftr:
+    case OpType::Shiftr:
       op = OpCode::Shiftr;
       break;
-    case ExprOp::And:
+    case OpType::And:
       op = OpCode::And;
       break;
-    case ExprOp::Or:
+    case OpType::Or:
       op = OpCode::Or;
       break;
-    case ExprOp::Xor:
+    case OpType::Xor:
       op = OpCode::Xor;
       break;
-    case ExprOp::Lt:
+    case OpType::Lt:
       op = OpCode::Lt;
       break;
-    case ExprOp::Gt:
+    case OpType::Gt:
       op = OpCode::Gt;
       break;
-    case ExprOp::Leq:
+    case OpType::Leq:
       op = OpCode::Leq;
       break;
-    case ExprOp::Geq:
+    case OpType::Geq:
       op = OpCode::Geq;
       break;
-    case ExprOp::Eq:
+    case OpType::Eq:
       op = OpCode::Eq;
       break;
-    case ExprOp::Neq:
+    case OpType::Neq:
       op = OpCode::Neq;
       break;
-    case ExprOp::LogicAnd:
+    case OpType::LogicAnd:
       op = OpCode::LogicAnd;
       break;
-    case ExprOp::LogicOr:
+    case OpType::LogicOr:
       op = OpCode::LogicOr;
       break;
     default:
@@ -593,19 +552,19 @@ InstructionResult
 TACBuilder::buildUnary(const UnaryExpr& unary)
 {
   InstructionResult expr;
-  if (unary.op == ExprOp::UnaryInc || unary.op == ExprOp::UnaryDec)
+  if (unary.op == OpType::UnaryInc || unary.op == OpType::UnaryDec)
     expr = buildPlace(unary.expr, { TACValue{}, true, true });
   else
     expr = buildPlace(unary.expr);
 
   OpCode op;
-  if (unary.op == ExprOp::UnaryNeg)
+  if (unary.op == OpType::UnaryNeg)
     op = OpCode::LogicNeg;
-  else if (unary.op == ExprOp::UnaryArithmNeg)
+  else if (unary.op == OpType::UnaryArithmNeg)
     op = OpCode::ArithmNeg;
-  else if (unary.op == ExprOp::UnaryInc)
+  else if (unary.op == OpType::UnaryInc)
     op = OpCode::Inc;
-  else if (unary.op == ExprOp::UnaryDec)
+  else if (unary.op == OpType::UnaryDec)
     op = OpCode::Dec;
 
   ValueID opVal = _ssa.makeValueID();
@@ -737,7 +696,7 @@ TACBuilder::resolveSSA()
 
   // pass2 - compute phi functions
   std::vector<Block*> worklist;
-  worklist.push_back(*_blocks.begin());
+  worklist.push_back(_blockAlloc.at(0));
   size_t idx = 0;
   while (idx < worklist.size()) {
     Block* current = worklist[idx];
@@ -760,7 +719,7 @@ TACBuilder::resolveSSA()
   // instruction pointers wont get invalidated
   std::vector<std::pair<Block*, PhiFunction*>> phiToInsert;
   for (auto& pair : _ssaBlocksMap) {
-    auto& b = _blocks.at(pair.first);
+    auto b = _blockAlloc.at(pair.first);
     auto& ctx = pair.second;
     for (auto& usedPair : ctx.usedVersions) {
       auto phiIt = ctx.phiFunctions.find(usedPair.first);
@@ -797,7 +756,7 @@ TACBuilder::resolveIdentities()
   std::unordered_set<BlockID::__BlockID> visited;
   std::vector<Block*> worklist;
 
-  worklist.push_back(*_blocks.begin());
+  worklist.push_back(_blockAlloc.at(0));
   auto idx = 0;
   while (idx < worklist.size()) {
     Block* current = worklist[idx];
@@ -820,7 +779,7 @@ TACBuilder::resolveIdentities()
         ctx.usedDefinitions.emplace(operand.id);
       } else if (instr->op == OpCode::Jmp) {
         auto blockID = std::get<BlockID>(instr->operands.at(0).id);
-        Block* b = _blocks.at(blockID.val);
+        Block* b = _blockAlloc.at(blockID.val);
         ctx.outBlocks.push_back(b);
         worklist.push_back(b);
 
@@ -829,8 +788,8 @@ TACBuilder::resolveIdentities()
       } else if (instr->op == OpCode::CondJmp) {
         auto ifBlockID = std::get<BlockID>(instr->operands.at(1).id);
         auto elseBlockID = std::get<BlockID>(instr->operands.at(2).id);
-        Block* ifBlock = _blocks.at(ifBlockID.val);
-        Block* elseBlock = _blocks.at(elseBlockID.val);
+        Block* ifBlock = _blockAlloc.at(ifBlockID.val);
+        Block* elseBlock = _blockAlloc.at(elseBlockID.val);
         ctx.outBlocks.push_back(ifBlock);
         ctx.outBlocks.push_back(elseBlock);
 
@@ -859,7 +818,7 @@ TACBuilder::resolveIdentities()
 
     if (!hasExit) {
       Instruction exit = { OpCode::Exit, {}, {}, current };
-      current->instructions.push_back(allocInstruction(exit));
+      current->instructions.push_back(_blockAlloc.allocInstruction(exit));
     } else {
       for (auto& pair : ctx.outVersions)
         ctx.propagatedIdentities.emplace(pair.first);
@@ -1046,8 +1005,8 @@ TACBuilder::insertPhi(Block* b, PhiFunction& phi)
     OpCode::Store, { TACValue{ phi.res }, newVal }, {}, b
   };
 
-  Instruction* phiInstr = allocInstruction(phiInstrTemp);
-  Instruction* store = allocInstruction(storeTemp);
+  Instruction* phiInstr = _blockAlloc.allocInstruction(phiInstrTemp);
+  Instruction* store = _blockAlloc.allocInstruction(storeTemp);
 
   b->instructions.insert(b->instructions.begin(), store);
   b->instructions.insert(b->instructions.begin(), phiInstr);

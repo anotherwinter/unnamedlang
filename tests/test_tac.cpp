@@ -21,12 +21,13 @@ main(int argc, char* argv[])
       auto tree = init.getTypedAST().build(astRoot);
       auto analyzedTree = init.getTypedAST().analyze(tree);
       auto blocks = init.getTAC().build(analyzedTree);
+      auto repairedBlocks = init.getTAC().dryOptimize(blocks);
       printf("\nBEFORE opt:\n");
-      init.getTAC().print(*blocks.blocks);
+      init.getTAC().print(repairedBlocks.begin);
 
       auto optimizedBlocks = init.getTAC().optimize(blocks);
       printf("\nAFTER opt:\n");
-      init.getTAC().print(*optimizedBlocks.blocks);
+      init.getTAC().print(optimizedBlocks.begin);
 
       auto id = init.getDiag().getLastMsgID();
       if (isValid(id)) {

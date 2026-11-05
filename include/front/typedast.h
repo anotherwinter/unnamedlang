@@ -9,43 +9,6 @@
 namespace HIR {
 struct TypedNode;
 
-enum class ExprOp : uint32_t
-{
-  Add = 0,
-  Sub,
-  Mul,
-  Div,
-  Mod,
-  Shiftl,
-  Shiftr,
-  And,
-  Or,
-  Xor,
-  Lt,
-  Gt,
-  Leq,
-  Geq,
-  Eq,
-  Neq,
-  LogicAnd,
-  LogicOr,
-  UnaryNeg,
-  UnaryArithmNeg,
-  UnaryInc,
-  UnaryDec,
-  Assign,
-  AssignAdd,
-  AssignSub,
-  AssignMul,
-  AssignDiv,
-  AssignMod,
-  AssignShiftl,
-  AssignShiftr,
-  AssignAnd,
-  AssignOr,
-  AssignXor,
-};
-
 struct NodeList
 {
   std::vector<TypedNode*> nodes;
@@ -116,7 +79,7 @@ struct VarDecl
 
 struct VarAssign
 {
-  ExprOp op = ExprOp::Assign;
+  OpType op = OpType::Assign;
   TypedNode* lhs;
   TypedNode* rhs;
 };
@@ -166,7 +129,7 @@ struct StmtBrk
 
 struct BinaryExpr
 {
-  ExprOp op;
+  OpType op;
   TypedNode* lhs;
   TypedNode* rhs;
   TypeID type = {};
@@ -180,7 +143,7 @@ enum class UnaryExprPrec
 
 struct UnaryExpr
 {
-  ExprOp op;
+  OpType op;
   UnaryExprPrec prec;
   TypedNode* expr;
   TypeID type = {};
@@ -312,6 +275,7 @@ public:
   ~TypedAST();
   TypedTree<Unanalyzed> build(const ASTNode* root);
   TypedTree<Analyzed> analyze(TypedTree<Unanalyzed> root);
+  
   void print(const TypedNode* node, int indent = 0);
 
 private:
@@ -319,6 +283,7 @@ private:
   TypedAST(TypedAST&& other) = delete;
 
   Diagnostics& _diag;
+  SymbolRegistry& _reg;
   std::unique_ptr<NodeAllocator> _alloc;
   std::unique_ptr<TypedASTBuilder> _builder;
   std::unique_ptr<TypedASTAnalyzer> _analyzer;

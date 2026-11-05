@@ -1,4 +1,5 @@
 #pragma once
+#include "middle/blockallocator.h"
 #include "middle/tac.h"
 #include <functional>
 #include <unordered_map>
@@ -45,19 +46,28 @@ constexpr size_t FoldNumberType = 1;
 class TACOptimizer
 {
 public:
-  TACOptimizer();
+  TACOptimizer(BlockAllocator& blockAlloc);
   ~TACOptimizer();
 
   TACBlocks<Optimized> optimize(TACBlocks<Unoptimized> blocks);
+
+  // Only repair SSA and don't do any optimizations
+  inline TACBlocks<Optimized> dryOptimize(TACBlocks<Unoptimized> blocks)
+  {
+    prepare(blocks);
+    repair();
+
+    return { _begin, &_optimizedBlocks };
+  }
 
 private:
   TACOptimizer(const TACOptimizer& other) = delete;
   TACOptimizer(TACOptimizer&& other) = delete;
 
+  BlockAllocator& _blockAlloc;
   SymbolUsesMap _symUses;
   ValueUsesMap _valueUses;
   Block* _begin;
-  Block* _end;
   std::vector<Block*>* _unoptimizedBlocks;
   std::vector<Block*> _optimizedBlocks;
   std::vector<Block*> _deadBlocks;
@@ -70,7 +80,6 @@ private:
   std::vector<DefUseChain*> _reductionWorklist;
   std::unordered_map<BlockID::__BlockID, std::vector<BlockID::__BlockID>>
     _preds;
-  UsedBlocks _usedBlocks;
 
   inline void addFoldFunction(FoldFn fn, size_t type1, size_t type2)
   {
@@ -91,6 +100,35 @@ private:
         --defUse.aliveUses;
       }
     }
+  }
+
+  inline void prepare(TACBlocks<Unoptimized> blocks)
+  {
+    _symUses.clear();
+    _valueUses.clear();
+    _optimizedBlocks.clear();
+    _deadBlocks.clear();
+    _optimizerBlocksCtx.clear();
+
+    _begin = blocks.begin;
+    _unoptimizedBlocks = blocks.blocks;
+
+    constructDefUse();
+  }
+
+  inline void optimizerPass()
+  {
+    copyPropagation();
+    constantFolding();
+
+    strengthReduction();
+    constantFolding();
+
+    auto reachable = peepholeSimplify();
+    repair();
+    // use peephole to re-wire blocks
+    peepholeRewire();
+    repair();
   }
 
   void constructFoldTable();
@@ -119,24 +157,7 @@ private:
 
   void updatePreds();
 
-  inline void optimizerPass()
-  {
-    constructDefUse();
-
-    copyPropagation();
-    constantFolding();
-
-    strengthReduction();
-    constantFolding();
-
-    auto reachable = peepholeSimplify();
-    repair();
-    // use peephole to re-wire blocks
-    peepholeRewire();
-    repair();
-
-    dce();
-  }
+  void outOfSSA();
 };
 
 }

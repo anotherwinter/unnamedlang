@@ -1,12 +1,14 @@
 #include "middle/tacoptimizer.h"
 #include "foldfunctions.h"
+#include "middle/blockallocator.h"
 #include "middle/tac.h"
 #include <cmath>
 #include <unordered_set>
 
 using namespace MIR;
 
-TACOptimizer::TACOptimizer()
+TACOptimizer::TACOptimizer(BlockAllocator& blockAlloc)
+  : _blockAlloc(blockAlloc)
 {
   constructFoldTable();
 }
@@ -16,17 +18,10 @@ TACOptimizer::~TACOptimizer() {}
 TACBlocks<Optimized>
 TACOptimizer::optimize(TACBlocks<Unoptimized> blocks)
 {
-  _symUses.clear();
-  _valueUses.clear();
-  _optimizedBlocks.clear();
-  _deadBlocks.clear();
-  _optimizerBlocksCtx.clear();
-
-  _begin = blocks.begin;
-  _end = blocks.blocks->back();
-  _unoptimizedBlocks = blocks.blocks;
-
+  prepare(blocks);
   optimizerPass();
+  // outOfSSA();
+  // dce();
 
   return { _begin, &_optimizedBlocks };
 }
@@ -147,12 +142,18 @@ TACOptimizer::copyPropagation()
     auto& operand = defUse.def->operands.at(0);
 
     DefUseChain* useDef = nullptr;
+    // every symbol has its def as store instruction, where SSAValue gets put
+    // into symbol. current construction mechanism by design cannot produce
+    // instruction that stores from one symbol to another, so we only check for
+    // SSAValue operand liveness
     if (operand.type == ValueType::SSAValue) {
       useDef = &_valueUses.find(std::get<ValueID>(operand.id).val)->second;
       if (useDef)
         --useDef->aliveUses;
     }
     for (auto& use : defUse.uses) {
+      // since we propagating symbol as its initial value, we kill its defining
+      // instruction (store)
       if (use.user->op == OpCode::Store) {
         killInstruction(use.user);
         continue;
@@ -167,18 +168,25 @@ TACOptimizer::copyPropagation()
         if (use.user->op != OpCode::Phi)
           ++useDef->aliveUses;
       }
+      // if useDef (operand to propagate) is not defined, then just stop
+      // propagation for given symbol
+      // this has to be checked only after store instruction has been
+      // killed/processed
+      else
+        break;
     }
-  }
-
-  for (auto& [id, defUse] : _valueUses) {
-    if (isValid(defUse.def->res))
-      _foldingWorklist.push_back(&defUse);
   }
 }
 
 void
 TACOptimizer::constantFolding()
 {
+  // find every currently active and used value and add it to worklist
+  for (auto& [id, defUse] : _valueUses) {
+    if (isValid(defUse.def->res))
+      _foldingWorklist.push_back(&defUse);
+  }
+
   size_t idx = 0;
   while (idx < _foldingWorklist.size()) {
     DefUseChain* current = _foldingWorklist[idx];
@@ -235,8 +243,6 @@ TACOptimizer::constantFolding()
       bool operandsEqual = lhs.id == rhs.id;
       if (!propagated && operandsEqual) {
         propagateVal = def->operands.at(1);
-      } else if (propagated && !operandsEqual) {
-
       } else
         continue;
     } else {
@@ -531,20 +537,21 @@ TACOptimizer::peepholeRewire()
       auto& ifBlockID = std::get<BlockID>(jump->operands.at(1).id);
       auto& elseBlockID = std::get<BlockID>(jump->operands.at(2).id);
 
-      auto& ifBlockCtx =
-        _optimizerBlocksCtx.try_emplace(ifBlockID.val).first->second;
-      auto& elseBlockCtx =
-        _optimizerBlocksCtx.try_emplace(elseBlockID.val).first->second;
-
       if (ctx.aliveInstructions > 0) {
         BlockID resolvedID;
-        if (ifBlockCtx.aliveInstructions == 1 && ifBlockCtx.jump) {
+
+        auto& ifBlockCtx =
+          _optimizerBlocksCtx.try_emplace(ifBlockID.val).first->second;
+        auto& elseBlockCtx =
+          _optimizerBlocksCtx.try_emplace(elseBlockID.val).first->second;
+
+        if (ifBlockCtx.aliveInstructions == 0 && ifBlockCtx.jump) {
           resolvedID = resolveTarget(ifBlockID);
           if (isValid(resolvedID))
             ifBlockID = resolvedID;
         }
 
-        if (elseBlockCtx.aliveInstructions == 1 && elseBlockCtx.jump) {
+        if (elseBlockCtx.aliveInstructions == 0 && elseBlockCtx.jump) {
           resolvedID = resolveTarget(elseBlockID);
           if (isValid(resolvedID))
             elseBlockID = resolvedID;
@@ -619,10 +626,9 @@ TACOptimizer::dce()
     if (visited.find(current->id.val) != visited.end())
       continue;
 
-    auto& ctx = _optimizerBlocksCtx.try_emplace(current->id.val).first->second;
     visited.emplace(current->id.val);
-    if (_usedBlocks.find(current->id.val) == _usedBlocks.end() &&
-        ctx.aliveInstructions == 0 && current != _end) {
+    auto& ctx = _optimizerBlocksCtx.try_emplace(current->id.val).first->second;
+    if (ctx.aliveInstructions == 0) {
       _deadBlocks.push_back(current);
     } else {
       reachable.push_back(current);
@@ -663,8 +669,6 @@ TACOptimizer::dce()
 void
 TACOptimizer::repair()
 {
-  _usedBlocks.clear();
-
   for (auto& ctx : _optimizerBlocksCtx) {
     std::vector<Instruction*> newPhiFunctions;
     for (auto& phi : ctx.second.phiFunctions) {
@@ -690,6 +694,8 @@ TACOptimizer::repair()
     if (!ctx.jump)
       continue;
 
+    // update phi instructions block id operands for jmp targets (given that
+    // those targets have phi)
     if (ctx.jump->op == OpCode::Jmp) {
       auto& nextBlockID = std::get<BlockID>(ctx.jump->operands.at(0).id);
       updatePhi(nextBlockID, current->id);
@@ -712,6 +718,8 @@ TACOptimizer::repair()
       if (phi->op != OpCode::Phi)
         continue;
 
+      // try to repair possibly simplified phi by setting to two identical
+      // values to choose from
       bool simplifiedPhi = false;
       size_t phiValidIdx = 0;
       size_t phiInvalidIdx;
@@ -721,11 +729,12 @@ TACOptimizer::repair()
           phiInvalidIdx = i + 1;
           simplifiedPhi = true;
         } else {
-          _usedBlocks.emplace(id.val);
           phiValidIdx = i + 1;
         }
       }
 
+      // if succeeded to repair phi, add it to folding worklist so it
+      // can be further optimized by constant folding
       if (simplifiedPhi && phiValidIdx != 0) {
         phi->operands.at(phiInvalidIdx) = phi->operands.at(phiValidIdx);
         auto& defUse = _valueUses.find(phi->res.val)->second;
@@ -806,4 +815,91 @@ TACOptimizer::updatePreds()
       worklist.push_back(_unoptimizedBlocks->at(elseBlockID.val));
     }
   }
+}
+
+void
+TACOptimizer::outOfSSA()
+{
+  std::vector<Instruction*> markedPhi;
+  std::vector<Block*> splitEdges;
+  std::unordered_set<BlockID::__BlockID> visited;
+  std::vector<Block*> worklist;
+
+  worklist.push_back(_begin);
+  size_t idx = 0;
+  while (idx < worklist.size()) {
+    Block* current = worklist[idx];
+    ++idx;
+    if (visited.find(current->id.val) != visited.end())
+      continue;
+
+    visited.emplace(current->id.val);
+
+    auto& ctx = _optimizerBlocksCtx.find(current->id.val)->second;
+    if (!ctx.jump)
+      continue;
+
+    size_t idx = 0;
+    // skip condition operand if condjmp
+    if (ctx.jump->operands.size() > 1)
+      idx = 1;
+
+    for (; idx < ctx.jump->operands.size(); ++idx) {
+      auto nextBlockID = std::get<BlockID>(ctx.jump->operands.at(idx).id);
+      auto& nextBlockCtx = _optimizerBlocksCtx.find(nextBlockID.val)->second;
+      Block* split = nullptr;
+      // iterate of phi functions of jump targets
+      for (auto& phi : nextBlockCtx.phiFunctions) {
+        markedPhi.push_back(phi);
+
+        if (phi->op != OpCode::Phi)
+          continue;
+
+        ValueID phiRes = phi->res;
+        // alloc split edge
+        if (!split)
+          split = _blockAlloc.alloc();
+
+        TACValue val;
+        // iterate over phi operands to get value that comes from origin block
+        // (the one where we found jmp instruction before)
+        for (size_t i = 0; i < phi->operands.size(); i += 2) {
+          BlockID& id = std::get<BlockID>(phi->operands.at(i).id);
+          if (id == current->id) {
+            val = phi->operands.at(i + 1);
+            break;
+          }
+        }
+
+        // substitute phi with selected value for split block
+        Instruction load = { OpCode::Load, { val }, phiRes, split };
+        split->instructions.push_back(_blockAlloc.allocInstruction(load));
+      }
+
+      if (split) {
+        auto& operandBlockID = std::get<BlockID>(ctx.jump->operands.at(idx).id);
+        BlockID splitBlockID = split->id;
+        auto& splitCtx =
+          _optimizerBlocksCtx.try_emplace(splitBlockID.val).first->second;
+        splitCtx.aliveInstructions = split->instructions.size();
+
+        Instruction jump = {
+          OpCode::Jmp, { ctx.jump->operands.at(idx) }, {}, split
+        };
+        split->instructions.push_back(_blockAlloc.allocInstruction(jump));
+        splitCtx.jump = split->instructions.back();
+
+        operandBlockID = splitBlockID;
+        splitEdges.push_back(split);
+      }
+
+      worklist.push_back(_blockAlloc.at(nextBlockID.val));
+    }
+  }
+
+  for (auto& phi : markedPhi)
+    phi->op = OpCode::Dead;
+
+  _optimizedBlocks.insert(
+    _optimizedBlocks.end(), splitEdges.begin(), splitEdges.end());
 }

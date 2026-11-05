@@ -2,6 +2,7 @@
 #include "alloc/arena.h"
 #include "front/symbolregistry.h"
 #include "front/typedast.h"
+#include "middle/blockallocator.h"
 #include "middle/layoutregistry.h"
 #include "middle/tac.h"
 
@@ -13,7 +14,8 @@ public:
   TACBuilder(Diagnostics& diag,
              SymbolRegistry& symReg,
              LayoutRegistry& layReg,
-             SSAState& ssa);
+             SSAState& ssa,
+             BlockAllocator& blockAlloc);
   ~TACBuilder();
 
   TACBlocks<Unoptimized> build(HIR::TypedTree<HIR::Analyzed> root);
@@ -29,10 +31,10 @@ private:
   LayoutRegistry& _layReg;
   SSAState& _ssa;
 
+  BlockAllocator& _blockAlloc;
+
   // currently active branches
   std::vector<BranchContext> _branches;
-
-  std::vector<Block*> _blocks;
 
   BlockID _blockID = { 0 };
 
@@ -43,7 +45,8 @@ private:
   inline void addInstruction(Instruction i)
   {
     i.owner = _branches.back().current;
-    _branches.back().current->instructions.push_back(allocInstruction(i));
+    _branches.back().current->instructions.push_back(
+      _blockAlloc.allocInstruction(i));
   }
 
   inline BranchContext currentBranchCtx() { return _branches.back(); }
@@ -54,10 +57,6 @@ private:
 
   InstructionResult addAccessInstruction(TACValue expr,
                                          MemberAccessContext ctx);
-
-  Block* allocBlock();
-
-  Instruction* allocInstruction(Instruction i);
 
   // pass1 - build TAC with SSA symbols
   void buildFromAST(const HIR::TypedNode* node);
